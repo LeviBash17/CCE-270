@@ -40,3 +40,9 @@
 - Asked: "commit this"
   Changed: Committed the Stage 1 mockup, Build stages spec addition, and prompt-log updates.
   Worked: Yes.
+- Asked: "Build stage 2 from the Build stages section of spec.md. Only build this stage. Put the calculations in their own clearly named functions, separate from the drawing code."
+  Changed: Updated index.html with interactive input controls, validation, dynamic point and uniform load rows, and beam/load drawing geometry in named functions. Structural analysis, response plots, checks, and section recommendations remain static placeholders; self-weight was left out for this stage.
+  Worked: Yes. Browser checks covered input and drawing updates, invalid values, span clamping, zero and 20 load rows, and a 390 px mobile layout without horizontal overflow. `git diff --check` passed.
+- Asked: "Build stage 3 from the Build stages section of spec.md. Only build this stage."
+  Changed: Added calculated support reactions and shear/moment diagrams based on applied loads, with exact load-point samples and moment extrema; deflection and design checks remain marked placeholders. Self-weight remains excluded.
+  Worked: Yes. Browser checks matched the full-span uniform-load, off-center point-load, cantilever end-load, partial-load, and zero-load cases. An off-grid point load and uniform-load peak were retained, invalid input marked results stale, and the 390 px layout had no horizontal overflow.

@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f3f6f5">
-  <title>Beam Designer — Static Preview</title>
+  <title>Beam Designer — Stage 3 Analysis</title>
   <style>
     :root {
       color-scheme: light;
@@ -224,6 +224,28 @@
 
     .field-grid.one { grid-template-columns: 1fr; }
     .field { min-width: 0; }
+    .field.has-error .control { border-color: #c56c53; }
+
+    .field-error {
+      display: none;
+      margin: 5px 0 0;
+      color: #a44f39;
+      font-size: 10px;
+      line-height: 1.35;
+    }
+
+    .field.has-error .field-error { display: block; }
+
+    .validation-status {
+      min-height: 17px;
+      margin: 9px 0 0;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.45;
+    }
+
+    .validation-status.error { color: #a44f39; }
+    .validation-status.success { color: var(--teal-dark); }
 
     .field label, .field-label {
       display: block;
@@ -267,36 +289,6 @@
       transform: translateY(-50%);
     }
 
-    .radio-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-    }
-
-    .radio-option {
-      min-height: 39px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 9px;
-      border: 1px solid #dce5e2;
-      border-radius: 8px;
-      color: #53625f;
-      font-size: 11px;
-      cursor: default;
-    }
-
-    .radio-option.selected {
-      border-color: #9dcac1;
-      color: var(--teal-dark);
-      background: #f1f9f7;
-      font-weight: 700;
-    }
-
-    .radio-option input, .check-control input {
-      accent-color: var(--teal);
-    }
-
     .lumber-preview {
       margin-top: 12px;
       padding: 11px;
@@ -328,10 +320,12 @@
     }
 
     .lumber-preview .field label { color: #7d8986; }
-    .lumber-preview .control:disabled {
-      color: #71807c;
-      background: #f3f6f5;
-      opacity: 1;
+
+    .catalog-note {
+      margin: 10px 0 0;
+      color: #74817e;
+      font-size: 10px;
+      line-height: 1.45;
     }
 
     .load-row {
@@ -357,6 +351,15 @@
       color: #3a4b47;
       font-size: 11px;
       font-weight: 720;
+    }
+
+    .load-type-select {
+      width: auto;
+      min-width: 130px;
+      min-height: 32px;
+      padding: 5px 26px 5px 8px;
+      font-size: 10px;
+      font-weight: 700;
     }
 
     .load-icon {
@@ -418,31 +421,15 @@
       cursor: default;
     }
 
-    .check-control {
-      display: flex;
-      align-items: flex-start;
-      gap: 9px;
-      padding: 11px;
-      border: 1px solid #dce9e5;
-      border-radius: 10px;
-      background: #f8fcfb;
-      cursor: default;
+    .add-load-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 10px;
     }
 
-    .check-control input { margin: 2px 0 0; }
-
-    .check-control strong {
-      display: block;
-      color: #354743;
-      font-size: 11px;
-    }
-
-    .check-control small {
-      display: block;
-      margin-top: 3px;
-      color: var(--muted);
-      font-size: 10px;
-    }
+    .add-load-actions .add-load { margin-top: 0; }
+    .add-load:disabled { opacity: 0.5; }
 
     .mockup-note {
       display: flex;
@@ -948,7 +935,7 @@
         <p class="brand-subtitle">Beam analysis workspace</p>
       </div>
     </div>
-    <div class="preview-badge">Static mockup · no calculations</div>
+    <div class="preview-badge">Stage 3 · analysis active</div>
   </header>
 
   <main>
@@ -956,7 +943,7 @@
       <div>
         <p class="eyebrow">Beam check</p>
         <h1 id="page-title">Design your beam</h1>
-        <p class="intro-copy">Set the support, section, and loads. Review the beam response and preliminary checks in one place.</p>
+        <p class="intro-copy">Set the support, span, and loads to see the reactions, shear, and moment update. Deflection and design checks remain placeholders.</p>
       </div>
       <div class="example-pill">
         <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
@@ -972,165 +959,106 @@
         <div class="panel-heading">
           <div>
             <h2 id="inputs-title">Beam inputs</h2>
-            <p>Example values · visual controls only</p>
+            <p>Interactive inputs · sample catalog</p>
           </div>
-          <span class="static-chip">Preview</span>
+          <span class="static-chip">Stage 3</span>
         </div>
-        <div class="panel-body">
+        <form class="panel-body" id="beam-input-form" novalidate>
           <section class="form-section" aria-labelledby="setup-label">
             <h3 class="section-label" id="setup-label">Beam setup</h3>
             <div class="field-grid">
               <div class="field">
                 <label for="support">Support type</label>
-                <select class="control" id="support">
-                  <option selected>Simply supported</option>
-                  <option>Cantilever</option>
+                <select class="control" id="support" name="support">
+                  <option value="simple" selected>Simply supported</option>
+                  <option value="cantilever">Cantilever</option>
                 </select>
+                <span class="field-error" aria-live="polite"></span>
               </div>
               <div class="field">
                 <label for="span">Span</label>
                 <div class="input-unit">
-                  <input class="control" id="span" type="number" value="20" min="0.1" max="100" step="0.1">
+                  <input class="control" id="span" name="span" type="number" value="20" min="0.1" max="100" step="0.1" required>
                   <span>ft</span>
                 </div>
+                <span class="field-error" aria-live="polite"></span>
               </div>
             </div>
 
             <div class="field-grid one" style="margin-top: 12px">
               <div class="field">
-                <span class="field-label">Material</span>
-                <div class="radio-row" role="group" aria-label="Material">
-                  <label class="radio-option selected"><input type="radio" name="material" checked> Steel W-shape</label>
-                  <label class="radio-option"><input type="radio" name="material"> Dimensional lumber</label>
-                </div>
+                <label for="material">Material</label>
+                <select class="control" id="material" name="material">
+                  <option value="steel" selected>Steel W-shape</option>
+                  <option value="lumber">Dimensional lumber</option>
+                </select>
+                <span class="field-error" aria-live="polite"></span>
               </div>
-              <div class="field">
+              <div class="field" id="steel-section-field">
                 <label for="steel-section">W-shape section</label>
-                <select class="control" id="steel-section">
+                <select class="control" id="steel-section" name="steel-section">
                   <option selected>W12x26</option>
                   <option>W12x22</option>
                   <option>W14x30</option>
                 </select>
+                <span class="field-error" aria-live="polite"></span>
               </div>
             </div>
 
-            <div class="lumber-preview" aria-label="Lumber selection fields shown for mockup coverage">
+            <div class="lumber-preview" id="lumber-fields" hidden>
               <div class="lumber-preview-head">
-                <span>Lumber catalog fields</span>
-                <span class="alt-tag">Alternate material</span>
+                <span>Lumber catalog selection</span>
+                <span class="alt-tag">Sample entry</span>
               </div>
               <div class="field-grid">
                 <div class="field">
                   <label for="lumber-size">Nominal size</label>
-                  <select class="control" id="lumber-size" disabled>
+                  <select class="control" id="lumber-size" name="lumber-size">
                     <option selected>2x10</option>
                   </select>
+                  <span class="field-error" aria-live="polite"></span>
                 </div>
                 <div class="field">
                   <label for="lumber-species">Species</label>
-                  <select class="control" id="lumber-species" disabled>
+                  <select class="control" id="lumber-species" name="lumber-species">
                     <option selected>SPF</option>
                   </select>
+                  <span class="field-error" aria-live="polite"></span>
                 </div>
                 <div class="field">
                   <label for="lumber-grade">Grade</label>
-                  <select class="control" id="lumber-grade" disabled>
+                  <select class="control" id="lumber-grade" name="lumber-grade">
                     <option selected>No. 2</option>
                   </select>
+                  <span class="field-error" aria-live="polite"></span>
                 </div>
               </div>
-              <p class="helper">Shown as an alternate catalog selection; controls are not wired in this mockup.</p>
+              <p class="catalog-note">UI sample options only; section properties and analysis are not implemented in this stage.</p>
             </div>
           </section>
 
           <section class="form-section" aria-labelledby="loads-label">
-            <h3 class="section-label" id="loads-label">Applied loads <span style="font-weight: 500; letter-spacing: 0; text-transform: none">· 2 of 20 rows</span></h3>
-
-            <div class="load-row">
-              <div class="load-row-head">
-                <div class="load-row-name">
-                  <span class="load-icon" aria-hidden="true">
-                    <svg width="12" height="14" viewBox="0 0 12 14" fill="none"><path d="M6 1v10m0 0 3-3m-3 3-3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                  </span>
-                  Uniform load
-                </div>
-                <button class="text-button" type="button" aria-label="Remove uniform load row">Remove</button>
-              </div>
-              <div class="load-fields">
-                <div class="field">
-                  <label for="uniform-magnitude">Intensity</label>
-                  <div class="input-unit">
-                    <input class="control" id="uniform-magnitude" type="number" value="1.00" min="0" max="100" step="0.01">
-                    <span>kip/ft</span>
-                  </div>
-                </div>
-                <div class="field">
-                  <label for="uniform-start">Start</label>
-                  <div class="input-unit">
-                    <input class="control" id="uniform-start" type="number" value="0" min="0" max="20" step="0.1">
-                    <span>ft</span>
-                  </div>
-                </div>
-                <div class="field">
-                  <label for="uniform-end">End</label>
-                  <div class="input-unit">
-                    <input class="control" id="uniform-end" type="number" value="20" min="0" max="20" step="0.1">
-                    <span>ft</span>
-                  </div>
-                </div>
-              </div>
+            <h3 class="section-label" id="loads-label">Applied loads <span id="load-count" style="font-weight: 500; letter-spacing: 0; text-transform: none">· 1 of 20 rows</span></h3>
+            <div id="load-rows" aria-live="polite"></div>
+            <p class="helper">Positive load values act downward. Positions and uniform-load extents are measured from the left end.</p>
+            <div class="add-load-actions">
+              <button class="add-load" type="button" data-add-load="point">
+                <svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+                Add point load
+              </button>
+              <button class="add-load" type="button" data-add-load="uniform">
+                <svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+                Add uniform load
+              </button>
             </div>
-
-            <div class="load-row">
-              <div class="load-row-head">
-                <div class="load-row-name">
-                  <span class="load-icon point" aria-hidden="true">
-                    <svg width="12" height="14" viewBox="0 0 12 14" fill="none"><path d="M6 1v10m0 0 3-3m-3 3-3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="6" cy="2" r="1.4" fill="currentColor"/></svg>
-                  </span>
-                  Point load <span style="color:#8a9693;font-size:9px;font-weight:500">· zero-load preview</span>
-                </div>
-                <button class="text-button" type="button" aria-label="Remove point load row">Remove</button>
-              </div>
-              <div class="load-fields">
-                <div class="field">
-                  <label for="point-magnitude">Magnitude</label>
-                  <div class="input-unit">
-                    <input class="control" id="point-magnitude" type="number" value="0.00" min="0" max="1000" step="0.1">
-                    <span>kip</span>
-                  </div>
-                </div>
-                <div class="field">
-                  <label for="point-position">Position</label>
-                  <div class="input-unit">
-                    <input class="control" id="point-position" type="number" value="10" min="0" max="20" step="0.1">
-                    <span>ft</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <p class="helper">Positive load values act downward. Point-load positions and uniform-load extents are measured from the left end.</p>
-            <button class="add-load" type="button">
-              <svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-              Add load row
-            </button>
-          </section>
-
-          <section class="form-section" aria-labelledby="weight-label">
-            <h3 class="section-label" id="weight-label">Additional effects</h3>
-            <label class="check-control" for="self-weight">
-              <input id="self-weight" type="checkbox" checked>
-              <span>
-                <strong>Include beam self-weight</strong>
-                <small>Applied over the full span · catalog weight</small>
-              </span>
-            </label>
+            <p class="validation-status" id="validation-status" role="status" aria-live="polite">Reactions, shear, and moment update from valid inputs. Self-weight is excluded.</p>
           </section>
 
           <div class="mockup-note" role="note">
             <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="6.25" stroke="currentColor" stroke-width="1.3"/><path d="M8 7.1v3.4M8 4.7h.01" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-            <span>Static mockup only. Controls and results are visual placeholders; no analysis is being calculated.</span>
+            <span>Stage 3 calculates reactions, shear, and moment from applied loads. Self-weight, deflection, design checks, and section recommendation are not calculated.</span>
           </div>
-        </div>
+        </form>
       </aside>
 
       <section class="results-column" aria-label="Beam outputs">
@@ -1138,13 +1066,13 @@
           <div class="beam-card-top">
             <div>
               <h2>Beam &amp; loading</h2>
-              <p class="beam-card-subtitle">Simply supported · W12x26 · 20 ft span</p>
+              <p class="beam-card-subtitle" id="beam-summary">Simply supported · W12x26 · 20 ft span</p>
             </div>
-            <span class="static-chip">Sample view</span>
+            <span class="static-chip">Analysis active</span>
           </div>
-          <svg class="beam-svg" viewBox="0 0 780 184" role="img" aria-labelledby="beam-title beam-desc">
-            <title id="beam-title">Static beam and load illustration</title>
-            <desc id="beam-desc">A 20 foot simply supported W12x26 beam with a full-span uniform load, zero point load row, and placeholder reactions of 10 kips at each support.</desc>
+          <svg class="beam-svg" id="beam-drawing" viewBox="0 0 780 200" role="img" aria-labelledby="beam-title beam-desc">
+            <title id="beam-title">Beam and load preview</title>
+            <desc id="beam-desc">The beam illustration updates from the current valid inputs. Reactions are static placeholders.</desc>
             <defs>
               <marker id="arrow-down" markerWidth="7" markerHeight="7" refX="3.5" refY="6" orient="auto" markerUnits="strokeWidth">
                 <path d="M0 0 3.5 6 7 0" fill="#477b9a"/>
@@ -1202,10 +1130,10 @@
               <text x="697" y="142" text-anchor="middle">20 ft</text>
             </g>
           </svg>
-          <div class="beam-caption">
+          <div class="beam-caption" id="beam-caption">
             <span class="legend-item"><span class="legend-mark"></span>Uniform load · downward</span>
-            <span class="legend-item"><span class="legend-mark reaction"></span>Reactions · placeholder</span>
-            <span class="legend-item"><span class="legend-mark point"></span>Point-load row is 0.00 kip</span>
+            <span class="legend-item"><span class="legend-mark reaction"></span>Calculated reactions</span>
+            <span class="legend-item"><span class="legend-mark point"></span>Point load · downward</span>
           </div>
         </article>
 
@@ -1213,94 +1141,34 @@
           <div class="diagram-heading">
             <div>
               <h2 id="diagrams-title">Response diagrams</h2>
-              <p>Same span scale · static sample values, not calculated</p>
-            </div>
-            <div class="cursor-sample">
-              <svg width="12" height="14" viewBox="0 0 12 14" fill="none" aria-hidden="true"><path d="M6 1v12" stroke="#157b72" stroke-width="1.5" stroke-dasharray="2 2"/></svg>
-              Cursor preview <strong>x = 10 ft</strong>
+              <p>Shear and moment use current inputs · deflection is a Stage 4 placeholder</p>
             </div>
           </div>
 
           <section class="chart" aria-labelledby="shear-title">
             <div class="chart-topline">
               <div class="chart-title" id="shear-title"><span class="swatch"></span>Shear force</div>
-              <div class="chart-maximum">Max absolute <strong>10.0 k</strong> <span>at 0 ft / 20 ft</span></div>
+              <div class="chart-maximum" id="shear-maximum"></div>
             </div>
-            <svg class="chart-svg" viewBox="0 0 780 142" role="img" aria-label="Placeholder shear diagram: line descends from positive 10 kips at the left support to negative 10 kips at the right support.">
-              <rect x="64" y="12" width="666" height="105" rx="6" fill="#fbfcfc"/>
-              <line x1="64" y1="64" x2="730" y2="64" stroke="#cfd9d6" stroke-width="1"/>
-              <line x1="64" y1="12" x2="64" y2="117" stroke="#e5ebe9" stroke-width="1"/>
-              <line x1="230.5" y1="12" x2="230.5" y2="117" stroke="#edf1f0" stroke-width="1"/>
-              <line x1="397" y1="12" x2="397" y2="117" stroke="#edf1f0" stroke-width="1"/>
-              <line x1="563.5" y1="12" x2="563.5" y2="117" stroke="#edf1f0" stroke-width="1"/>
-              <line x1="730" y1="12" x2="730" y2="117" stroke="#e5ebe9" stroke-width="1"/>
-              <path d="M64 64 64 22 397 64Z" fill="#e1edf3"/>
-              <path d="M397 64 730 106 730 64Z" fill="#f3e8e2"/>
-              <path d="M64 22 730 106" fill="none" stroke="#477b9a" stroke-width="2.4" stroke-linecap="round"/>
-              <line x1="397" y1="12" x2="397" y2="117" stroke="#157b72" stroke-width="1.4" stroke-dasharray="4 4"/>
-              <circle cx="397" cy="64" r="4" fill="#fff" stroke="#157b72" stroke-width="2"/>
-              <circle cx="64" cy="22" r="3.5" fill="#477b9a"/>
-              <circle cx="730" cy="106" r="3.5" fill="#477b9a"/>
-              <text x="71" y="18" fill="#426d87" font-size="10" font-weight="700">+10.0 k</text>
-              <text x="723" y="121" text-anchor="end" fill="#426d87" font-size="10" font-weight="700">−10.0 k</text>
-              <rect x="374" y="39" width="46" height="17" rx="5" fill="#fff" stroke="#dce8e4"/>
-              <text x="397" y="51" text-anchor="middle" fill="#437068" font-size="9" font-weight="700">0.0 k</text>
-            </svg>
-            <div class="chart-xaxis" aria-hidden="true"><span>0 ft</span><span>5 ft</span><span>10 ft</span><span>15 ft</span><span>20 ft</span></div>
+            <svg class="chart-svg" id="shear-chart" viewBox="0 0 780 142" role="img" aria-label="Shear diagram will update from valid inputs."></svg>
           </section>
 
           <section class="chart" aria-labelledby="moment-title">
             <div class="chart-topline">
               <div class="chart-title" id="moment-title"><span class="swatch moment"></span>Bending moment</div>
-              <div class="chart-maximum">Max <strong>50.0 kip-ft</strong> <span>at 10 ft</span></div>
+              <div class="chart-maximum" id="moment-maximum"></div>
             </div>
-            <svg class="chart-svg" viewBox="0 0 780 142" role="img" aria-label="Placeholder bending moment diagram: a filled parabolic curve with maximum 50 kip-feet at midspan.">
-              <rect x="64" y="12" width="666" height="105" rx="6" fill="#fbfcfc"/>
-              <line x1="64" y1="116" x2="730" y2="116" stroke="#cfd9d6" stroke-width="1"/>
-              <line x1="64" y1="12" x2="64" y2="117" stroke="#e5ebe9" stroke-width="1"/>
-              <line x1="230.5" y1="12" x2="230.5" y2="117" stroke="#edf1f0" stroke-width="1"/>
-              <line x1="397" y1="12" x2="397" y2="117" stroke="#edf1f0" stroke-width="1"/>
-              <line x1="563.5" y1="12" x2="563.5" y2="117" stroke="#edf1f0" stroke-width="1"/>
-              <line x1="730" y1="12" x2="730" y2="117" stroke="#e5ebe9" stroke-width="1"/>
-              <path d="M64 116 C180 78 281 29 397 24 C513 29 614 78 730 116 L730 116Z" fill="#dcefe9"/>
-              <path d="M64 116 C180 78 281 29 397 24 C513 29 614 78 730 116" fill="none" stroke="#157b72" stroke-width="2.4" stroke-linecap="round"/>
-              <line x1="397" y1="12" x2="397" y2="117" stroke="#157b72" stroke-width="1.4" stroke-dasharray="4 4"/>
-              <circle cx="397" cy="24" r="4" fill="#fff" stroke="#157b72" stroke-width="2"/>
-              <rect x="359" y="1" width="76" height="17" rx="5" fill="#fff" stroke="#dce8e4"/>
-              <text x="397" y="13" text-anchor="middle" fill="#286d62" font-size="9" font-weight="700">50.0 kip-ft</text>
-            </svg>
-            <div class="chart-xaxis" aria-hidden="true"><span>0 ft</span><span>5 ft</span><span>10 ft</span><span>15 ft</span><span>20 ft</span></div>
+            <svg class="chart-svg" id="moment-chart" viewBox="0 0 780 142" role="img" aria-label="Moment diagram will update from valid inputs."></svg>
           </section>
 
           <section class="chart" aria-labelledby="deflection-title">
             <div class="chart-topline">
               <div class="chart-title" id="deflection-title"><span class="swatch deflection"></span>Deflected shape</div>
-              <div class="chart-maximum">Max <strong>0.609 in</strong> <span>at 10 ft</span></div>
+              <div class="chart-maximum"><strong>Stage 4 placeholder</strong></div>
             </div>
-            <svg class="chart-svg" viewBox="0 0 780 142" role="img" aria-label="Placeholder deflection diagram: downward curve with maximum deflection 0.609 inches at midspan.">
-              <rect x="64" y="12" width="666" height="105" rx="6" fill="#fbfcfc"/>
-              <line x1="64" y1="25" x2="730" y2="25" stroke="#cfd9d6" stroke-width="1"/>
-              <line x1="64" y1="12" x2="64" y2="117" stroke="#e5ebe9" stroke-width="1"/>
-              <line x1="230.5" y1="12" x2="230.5" y2="117" stroke="#edf1f0" stroke-width="1"/>
-              <line x1="397" y1="12" x2="397" y2="117" stroke="#edf1f0" stroke-width="1"/>
-              <line x1="563.5" y1="12" x2="563.5" y2="117" stroke="#edf1f0" stroke-width="1"/>
-              <line x1="730" y1="12" x2="730" y2="117" stroke="#e5ebe9" stroke-width="1"/>
-              <path d="M64 25 C175 28 292 100 397 108 C502 100 619 28 730 25 L730 25Z" fill="#eeeaf5"/>
-              <path d="M64 25 C175 28 292 100 397 108 C502 100 619 28 730 25" fill="none" stroke="#8c78b4" stroke-width="2.4" stroke-linecap="round"/>
-              <line x1="397" y1="12" x2="397" y2="117" stroke="#157b72" stroke-width="1.4" stroke-dasharray="4 4"/>
-              <circle cx="397" cy="108" r="4" fill="#fff" stroke="#8c78b4" stroke-width="2"/>
-              <rect x="357" y="112" width="80" height="17" rx="5" fill="#fff" stroke="#e5e0ee"/>
-              <text x="397" y="124" text-anchor="middle" fill="#71628f" font-size="9" font-weight="700">−0.609 in</text>
-            </svg>
-            <div class="chart-xaxis" aria-hidden="true"><span>0 ft</span><span>5 ft</span><span>10 ft</span><span>15 ft</span><span>20 ft</span></div>
+            <svg class="chart-svg" id="deflection-chart" viewBox="0 0 780 142" role="img" aria-label="Deflection analysis is planned for Stage 4."></svg>
           </section>
 
-          <div class="hover-readout" aria-label="Static crosshair preview values">
-            <span>Crosshair preview at <strong>x = 10 ft</strong></span>
-            <span>V <strong>0.0 k</strong></span>
-            <span>M <strong>50.0 kip-ft</strong></span>
-            <span>y <strong>−0.609 in</strong></span>
-          </div>
         </article>
 
         <section class="checks-grid" aria-label="Placeholder design checks">
@@ -1369,9 +1237,813 @@
           </button>
         </section>
 
-        <p class="footer-note">Stage 1 mockup · values are for visual review only and do not represent a beam analysis.</p>
+        <p class="footer-note">Stage 3 · reactions, shear, and moment are calculated from applied loads only. Deflection and design checks remain placeholders.</p>
       </section>
     </div>
   </main>
+  <script>
+    "use strict";
+
+    const catalogs = {
+      steel: ["W12x26", "W12x22", "W14x30"],
+      lumber: [{ size: "2x10", species: "SPF", grade: "No. 2" }]
+    };
+    const loadColors = ["#477b9a", "#ba8740", "#8c78b4", "#438a78", "#b36b5f"];
+    const form = document.getElementById("beam-input-form");
+    const loadRows = document.getElementById("load-rows");
+    const validationStatus = document.getElementById("validation-status");
+    const steelField = document.getElementById("steel-section-field");
+    const lumberFields = document.getElementById("lumber-fields");
+    let nextLoadId = 2;
+    let lastValidSpan = 20;
+
+    function createLoad(type, span, id) {
+      if (type === "point") {
+        return { id, type, magnitude: 0, position: span / 2 };
+      }
+
+      return { id, type: "uniform", magnitude: 0, start: 0, end: span };
+    }
+
+    function formatInputValue(value) {
+      return Number.isFinite(value) ? String(value) : "";
+    }
+
+    function renderNumericLoadField(id, field, label, value, unit, min, max, step) {
+      return `
+        <div class="field">
+          <label for="${id}-${field}">${label}</label>
+          <div class="input-unit">
+            <input class="control" id="${id}-${field}" type="number" data-load-field="${field}"
+              value="${formatInputValue(value)}" min="${min}" max="${max}" step="${step}" required>
+            <span>${unit}</span>
+          </div>
+          <span class="field-error" aria-live="polite"></span>
+        </div>`;
+    }
+
+    function renderLoadRows(loads, span) {
+      if (loads.length === 0) {
+        loadRows.innerHTML = '<p class="helper">No applied load rows.</p>';
+      } else {
+        loadRows.innerHTML = loads.map((load, index) => {
+          const rowId = `load-${load.id}`;
+          const isPoint = load.type === "point";
+          const fields = isPoint
+            ? renderNumericLoadField(rowId, "magnitude", "Magnitude", load.magnitude, "kip", 0, 1000, 0.1)
+              + renderNumericLoadField(rowId, "position", "Position", load.position, "ft", 0, span, 0.1)
+            : renderNumericLoadField(rowId, "magnitude", "Intensity", load.magnitude, "kip/ft", 0, 100, 0.01)
+              + renderNumericLoadField(rowId, "start", "Start", load.start, "ft", 0, span, 0.1)
+              + renderNumericLoadField(rowId, "end", "End", load.end, "ft", 0, span, 0.1);
+
+          return `
+            <div class="load-row" data-load-id="${load.id}" data-rendered-type="${load.type}">
+              <div class="load-row-head">
+                <div class="load-row-name">
+                  <span class="load-icon ${isPoint ? "point" : ""}" aria-hidden="true">
+                    <svg width="12" height="14" viewBox="0 0 12 14" fill="none">
+                      <path d="M6 1v10m0 0 3-3m-3 3-3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                      ${isPoint ? '<circle cx="6" cy="2" r="1.4" fill="currentColor"/>' : ""}
+                    </svg>
+                  </span>
+                  <label class="sr-only" for="${rowId}-type">Load type for row ${index + 1}</label>
+                  <select class="control load-type-select" id="${rowId}-type" data-load-type>
+                    <option value="point" ${isPoint ? "selected" : ""}>Point load</option>
+                    <option value="uniform" ${isPoint ? "" : "selected"}>Uniform load</option>
+                  </select>
+                </div>
+                <button class="text-button" type="button" data-remove-load aria-label="Remove load row ${index + 1}">Remove</button>
+              </div>
+              <div class="load-fields">${fields}</div>
+            </div>`;
+        }).join("");
+      }
+
+      document.getElementById("load-count").textContent = `· ${loads.length} of 20 rows`;
+      form.querySelectorAll("[data-add-load]").forEach((button) => {
+        button.disabled = loads.length >= 20;
+      });
+    }
+
+    function readNumber(input) {
+      if (!input || input.value.trim() === "") return Number.NaN;
+      return Number(input.value);
+    }
+
+    function readDesignInputs() {
+      const spanInput = document.getElementById("span");
+      const loads = [...loadRows.querySelectorAll(".load-row")].map((row) => {
+        const type = row.dataset.renderedType;
+        const magnitudeInput = row.querySelector('[data-load-field="magnitude"]');
+        const positionInput = row.querySelector('[data-load-field="position"]');
+        const startInput = row.querySelector('[data-load-field="start"]');
+        const endInput = row.querySelector('[data-load-field="end"]');
+
+        return {
+          id: Number(row.dataset.loadId),
+          type,
+          magnitude: readNumber(magnitudeInput),
+          position: readNumber(positionInput),
+          start: readNumber(startInput),
+          end: readNumber(endInput),
+          fields: {
+            magnitude: magnitudeInput,
+            position: positionInput,
+            start: startInput,
+            end: endInput
+          }
+        };
+      });
+
+      return {
+        support: document.getElementById("support").value,
+        span: readNumber(spanInput),
+        spanInput,
+        material: document.getElementById("material").value,
+        steelSection: document.getElementById("steel-section").value,
+        lumberSize: document.getElementById("lumber-size").value,
+        lumberSpecies: document.getElementById("lumber-species").value,
+        lumberGrade: document.getElementById("lumber-grade").value,
+        loads
+      };
+    }
+
+    function validateDesignInputs(state) {
+      const errors = [];
+      const validSpan = Number.isFinite(state.span) && state.span >= 0.1 && state.span <= 100;
+      if (!validSpan) {
+        errors.push({
+          input: state.spanInput,
+          message: "Enter a span from 0.1 to 100 ft."
+        });
+      }
+
+      const maxPosition = validSpan ? state.span : 100;
+      if (!["simple", "cantilever"].includes(state.support)) {
+        errors.push({ input: document.getElementById("support"), message: "Choose a listed support type." });
+      }
+
+      if (state.material === "steel" && !catalogs.steel.includes(state.steelSection)) {
+        errors.push({ input: document.getElementById("steel-section"), message: "Choose a listed W-shape." });
+      }
+
+      if (state.material === "lumber" && !catalogs.lumber.some((entry) =>
+        entry.size === state.lumberSize && entry.species === state.lumberSpecies && entry.grade === state.lumberGrade)) {
+        errors.push({ input: document.getElementById("lumber-size"), message: "Choose a listed lumber entry." });
+      }
+
+      if (state.loads.length > 20) {
+        errors.push({ input: null, message: "A maximum of 20 load rows is allowed." });
+      }
+
+      for (const load of state.loads) {
+        const maximum = load.type === "point" ? 1000 : 100;
+        if (!Number.isFinite(load.magnitude) || load.magnitude < 0 || load.magnitude > maximum) {
+          errors.push({
+            input: load.fields.magnitude,
+            message: `Enter a value from 0 to ${maximum} ${load.type === "point" ? "kip" : "kip/ft"}.`
+          });
+        }
+
+        if (load.type === "point") {
+          if (!Number.isFinite(load.position) || load.position < 0 || load.position > maxPosition) {
+            errors.push({
+              input: load.fields.position,
+              message: `Position must be from 0 to ${formatInputValue(maxPosition)} ft.`
+            });
+          }
+        } else {
+          const startValid = Number.isFinite(load.start) && load.start >= 0 && load.start <= maxPosition;
+          const endValid = Number.isFinite(load.end) && load.end >= 0 && load.end <= maxPosition;
+          if (!startValid) {
+            errors.push({
+              input: load.fields.start,
+              message: `Start must be from 0 to ${formatInputValue(maxPosition)} ft.`
+            });
+          }
+          if (!endValid) {
+            errors.push({
+              input: load.fields.end,
+              message: `End must be from 0 to ${formatInputValue(maxPosition)} ft.`
+            });
+          } else if (startValid && load.start >= load.end) {
+            errors.push({ input: load.fields.end, message: "End must be greater than start." });
+          }
+        }
+      }
+
+      return errors;
+    }
+
+    function renderValidationErrors(errors) {
+      form.querySelectorAll(".field").forEach((field) => {
+        field.classList.remove("has-error");
+        const message = field.querySelector(".field-error");
+        if (message) message.textContent = "";
+        field.querySelectorAll(".control").forEach((control) => control.removeAttribute("aria-invalid"));
+      });
+
+      errors.forEach(({ input, message }) => {
+        if (!input) return;
+        const field = input.closest(".field");
+        if (!field) return;
+        field.classList.add("has-error");
+        input.setAttribute("aria-invalid", "true");
+        const errorMessage = field.querySelector(".field-error");
+        if (errorMessage) errorMessage.textContent = message;
+      });
+    }
+
+    function updatePositionLimits(span) {
+      const max = Number.isFinite(span) && span >= 0.1 && span <= 100 ? span : 100;
+      loadRows.querySelectorAll('[data-load-field="position"], [data-load-field="start"], [data-load-field="end"]')
+        .forEach((input) => input.max = String(max));
+    }
+
+    // This function computes only SVG coordinates and labels, never beam response values.
+    function computeBeamDrawingModel(state) {
+      const beamStart = state.support === "cantilever" ? 100 : 80;
+      const beamEnd = 700;
+      const beamWidth = beamEnd - beamStart;
+      const xAt = (position) => beamStart + (position / state.span) * beamWidth;
+      const section = state.material === "steel"
+        ? state.steelSection
+        : `${state.lumberSize} · ${state.lumberSpecies} · ${state.lumberGrade}`;
+
+      const loads = state.loads.map((load, index) => {
+        const color = loadColors[index % loadColors.length];
+        if (load.type === "point") {
+          return {
+            type: "point",
+            color,
+            magnitude: load.magnitude,
+            x: xAt(load.position),
+            label: `${load.magnitude.toFixed(2)} kip at ${load.position.toFixed(2)} ft`
+          };
+        }
+
+        const count = Math.max(2, Math.min(14, Math.ceil(((load.end - load.start) / state.span) * 12) + 1));
+        const arrowPositions = Array.from({ length: count }, (_, arrowIndex) => {
+          const fraction = count === 1 ? 0 : arrowIndex / (count - 1);
+          return xAt(load.start + (load.end - load.start) * fraction);
+        });
+        return {
+          type: "uniform",
+          color,
+          magnitude: load.magnitude,
+          start: load.start,
+          end: load.end,
+          xStart: xAt(load.start),
+          xEnd: xAt(load.end),
+          arrowPositions,
+          label: `${load.magnitude.toFixed(2)} kip/ft · ${load.start.toFixed(2)}–${load.end.toFixed(2)} ft`
+        };
+      });
+
+      return {
+        support: state.support,
+        span: state.span,
+        beamStart,
+        beamEnd,
+        section,
+        ticks: [0, 0.25, 0.5, 0.75, 1].map((fraction) => ({
+          position: state.span * fraction,
+          x: beamStart + beamWidth * fraction
+        })),
+        loads
+      };
+    }
+
+    function calculateLoadResultants(state) {
+      let totalLoad = 0;
+      let totalMoment = 0;
+
+      state.loads.forEach((load) => {
+        if (load.type === "point") {
+          totalLoad += load.magnitude;
+          totalMoment += load.magnitude * load.position;
+          return;
+        }
+
+        const resultant = load.magnitude * (load.end - load.start);
+        totalLoad += resultant;
+        totalMoment += resultant * (load.start + load.end) / 2;
+      });
+
+      return { totalLoad, totalMoment };
+    }
+
+    function calculateReactions(state, resultants) {
+      if (state.support === "cantilever") {
+        return {
+          left: resultants.totalLoad,
+          right: 0,
+          fixedMoment: resultants.totalMoment
+        };
+      }
+
+      const right = resultants.totalMoment / state.span;
+      return {
+        left: resultants.totalLoad - right,
+        right,
+        fixedMoment: 0
+      };
+    }
+
+    function calculateShearValue(state, reactions, position, side) {
+      const reaction = reactions.left;
+      let appliedPointLoads = 0;
+      let appliedUniformLoads = 0;
+
+      state.loads.forEach((load) => {
+        if (load.type === "point") {
+          const isIncluded = side === "left"
+            ? load.position < position - 1e-9
+            : load.position <= position + 1e-9;
+          if (isIncluded) appliedPointLoads += load.magnitude;
+          return;
+        }
+
+        const loadedLength = Math.max(0, Math.min(position, load.end) - load.start);
+        appliedUniformLoads += load.magnitude * loadedLength;
+      });
+
+      return reaction - appliedPointLoads - appliedUniformLoads;
+    }
+
+    function calculateMomentValue(state, reactions, position) {
+      if (state.support === "cantilever") {
+        let momentFromRight = 0;
+        state.loads.forEach((load) => {
+          if (load.type === "point") {
+            momentFromRight += load.magnitude * Math.max(0, load.position - position);
+            return;
+          }
+
+          const start = Math.max(position, load.start);
+          const loadedLength = Math.max(0, load.end - start);
+          momentFromRight += load.magnitude * loadedLength * ((start + load.end) / 2 - position);
+        });
+        return -momentFromRight;
+      }
+
+      let moment = reactions.left * position;
+      state.loads.forEach((load) => {
+        if (load.type === "point") {
+          moment -= load.magnitude * Math.max(0, position - load.position);
+          return;
+        }
+
+        const loadedEnd = Math.min(position, load.end);
+        const loadedLength = Math.max(0, loadedEnd - load.start);
+        moment -= load.magnitude * loadedLength * (position - (load.start + loadedEnd) / 2);
+      });
+      return moment;
+    }
+
+    function uniquePositions(positions) {
+      const sorted = positions.sort((first, second) => first - second);
+      return sorted.filter((position, index) =>
+        index === 0 || Math.abs(position - sorted[index - 1]) > 1e-9);
+    }
+
+    function findAbsoluteExtremum(samples) {
+      const maximum = Math.max(0, ...samples.map((sample) => Math.abs(sample.value)));
+      const tolerance = Math.max(1, maximum) * 1e-9;
+      const candidates = samples.filter((sample) => Math.abs(Math.abs(sample.value) - maximum) <= tolerance);
+      return {
+        value: maximum,
+        sample: candidates[0] || { position: 0, value: 0 },
+        positions: uniquePositions(candidates.map((sample) => sample.position))
+      };
+    }
+
+    function computeBeamAnalysis(state) {
+      const resultants = calculateLoadResultants(state);
+      const reactions = calculateReactions(state, resultants);
+      const gridCount = Math.ceil(state.span * 4);
+      const positions = Array.from({ length: gridCount + 1 }, (_, index) =>
+        state.span * index / gridCount);
+
+      state.loads.forEach((load) => {
+        positions.push(load.type === "point" ? load.position : load.start);
+        if (load.type === "uniform") positions.push(load.end);
+      });
+
+      const basePositions = uniquePositions(positions);
+      const momentRoots = [];
+      for (let index = 0; index < basePositions.length - 1; index += 1) {
+        const start = basePositions[index];
+        const end = basePositions[index + 1];
+        const shearStart = calculateShearValue(state, reactions, start, "right");
+        const shearEnd = calculateShearValue(state, reactions, end, "left");
+        if ((shearStart < 0 && shearEnd > 0) || (shearStart > 0 && shearEnd < 0)) {
+          momentRoots.push(start + (shearStart / (shearStart - shearEnd)) * (end - start));
+        }
+      }
+
+      const plotPositions = uniquePositions([...basePositions, ...momentRoots]);
+      const shearSamples = [];
+      const momentSamples = plotPositions.map((position) => ({
+        position,
+        value: calculateMomentValue(state, reactions, position)
+      }));
+
+      plotPositions.forEach((position) => {
+        const hasPointLoad = state.loads.some((load) =>
+          load.type === "point" && load.magnitude > 0 && Math.abs(load.position - position) < 1e-9);
+        if (hasPointLoad) {
+          shearSamples.push(
+            { position, value: calculateShearValue(state, reactions, position, "left") },
+            { position, value: calculateShearValue(state, reactions, position, "right") }
+          );
+        } else {
+          shearSamples.push({
+            position,
+            value: calculateShearValue(state, reactions, position, "right")
+          });
+        }
+      });
+
+      return {
+        reactions,
+        shearSamples,
+        momentSamples,
+        maximumShear: findAbsoluteExtremum(shearSamples),
+        maximumMoment: findAbsoluteExtremum(momentSamples)
+      };
+    }
+
+    function formatPosition(position) {
+      return `${position.toFixed(2).replace(/\.?0+$/, "")} ft`;
+    }
+
+    function formatExtremeLocations(extremum) {
+      if (extremum.value === 0) return "throughout span";
+      const groups = [];
+      extremum.positions.forEach((position) => {
+        const current = groups[groups.length - 1];
+        if (current && position - current[1] <= 0.251) {
+          current[1] = position;
+        } else {
+          groups.push([position, position]);
+        }
+      });
+      const locations = groups.slice(0, 3).map(([start, end]) =>
+        Math.abs(end - start) < 1e-9
+          ? formatPosition(start)
+          : `${formatPosition(start)} to ${formatPosition(end)}`);
+      return `at ${locations.join(" / ")}${groups.length > 3 ? " …" : ""}`;
+    }
+
+    function computeResponseDiagramModel(analysis, beamModel) {
+      const plotTop = 12;
+      const plotBottom = 117;
+      const baseline = (plotTop + plotBottom) / 2;
+      const plotHeight = plotBottom - plotTop;
+      const xScale = (beamModel.beamEnd - beamModel.beamStart) / beamModel.span;
+      const mapSamples = (samples, maximum) => {
+        const valueScale = (plotHeight * 0.43) / (maximum || 1);
+        return samples.map((sample) => ({
+          position: sample.position,
+          value: sample.value,
+          x: beamModel.beamStart + sample.position * xScale,
+          y: baseline - sample.value * valueScale
+        }));
+      };
+      const ticks = beamModel.ticks.map((tick) => ({
+        x: tick.x,
+        label: formatPosition(tick.position)
+      }));
+
+      const shearSamples = mapSamples(analysis.shearSamples, analysis.maximumShear.value);
+      const momentSamples = mapSamples(analysis.momentSamples, analysis.maximumMoment.value);
+      const mapExtremum = (extremum, samples) => ({
+        ...extremum,
+        sample: samples.find((sample) =>
+          Math.abs(sample.position - extremum.sample.position) < 1e-9 &&
+          Math.abs(sample.value - extremum.sample.value) < 1e-9)
+      });
+
+      return {
+        beamStart: beamModel.beamStart,
+        beamEnd: beamModel.beamEnd,
+        baseline,
+        plotTop,
+        plotBottom,
+        ticks,
+        shearSamples,
+        momentSamples,
+        maximumShear: mapExtremum(analysis.maximumShear, shearSamples),
+        maximumMoment: mapExtremum(analysis.maximumMoment, momentSamples)
+      };
+    }
+
+    function buildChartFrame(model) {
+      const tickMarkup = model.ticks.map((tick, index) => `
+        <line x1="${tick.x}" y1="${model.plotTop}" x2="${tick.x}" y2="${model.plotBottom}"
+          stroke="${index === 0 || index === model.ticks.length - 1 ? "#e5ebe9" : "#edf1f0"}" stroke-width="1"/>
+        <text x="${tick.x}" y="137" text-anchor="middle" fill="#83908d" font-size="9">${escapeSvgText(tick.label)}</text>
+      `).join("");
+      return `
+        <rect x="${model.beamStart}" y="${model.plotTop}" width="${model.beamEnd - model.beamStart}"
+          height="${model.plotBottom - model.plotTop}" rx="6" fill="#fbfcfc"/>
+        <line x1="${model.beamStart}" y1="${model.baseline}" x2="${model.beamEnd}" y2="${model.baseline}"
+          stroke="#cfd9d6" stroke-width="1"/>
+        ${tickMarkup}`;
+    }
+
+    function buildAreaMarkup(samples, baseline, positiveColor, negativeColor) {
+      return samples.slice(1).map((sample, index) => {
+        const previous = samples[index];
+        const fill = (previous.value + sample.value) >= 0 ? positiveColor : negativeColor;
+        return `<path d="M${previous.x} ${baseline}L${previous.x} ${previous.y}L${sample.x} ${sample.y}L${sample.x} ${baseline}Z" fill="${fill}"/>`;
+      }).join("");
+    }
+
+    function buildLinePath(samples) {
+      return samples.map((sample, index) =>
+        `${index === 0 ? "M" : "L"}${sample.x} ${sample.y}`).join(" ");
+    }
+
+    function buildPeakMarkup(sample, unit, color, plotTop, plotBottom) {
+      if (!sample || sample.value === 0) return "";
+      const labelY = Math.max(plotTop + 9, Math.min(plotBottom - 2, sample.y - 7));
+      const anchor = sample.x < 100 ? "start" : sample.x > 680 ? "end" : "middle";
+      const value = `${sample.value > 0 ? "+" : "−"}${Math.abs(sample.value).toFixed(2)} ${unit}`;
+      return `
+        <circle cx="${sample.x}" cy="${sample.y}" r="3.5" fill="#fff" stroke="${color}" stroke-width="2"/>
+        <text x="${sample.x}" y="${labelY}" text-anchor="${anchor}" fill="${color}" font-size="9" font-weight="700"
+          style="paint-order:stroke;stroke:#fff;stroke-width:3px;stroke-linejoin:round">${value}</text>`;
+    }
+
+    function renderResponseDiagrams(model) {
+      const shearChart = document.getElementById("shear-chart");
+      shearChart.setAttribute("aria-label", `Shear diagram. Maximum absolute shear ${model.maximumShear.value.toFixed(2)} kips ${formatExtremeLocations(model.maximumShear)}.`);
+      shearChart.innerHTML = `
+        ${buildChartFrame(model)}
+        ${buildAreaMarkup(model.shearSamples, model.baseline, "#e1edf3", "#f3e8e2")}
+        <path d="${buildLinePath(model.shearSamples)}" fill="none" stroke="#477b9a" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+        ${buildPeakMarkup(model.maximumShear.sample, "k", "#426d87", model.plotTop, model.plotBottom)}`;
+      document.getElementById("shear-maximum").innerHTML =
+        `Max |V| <strong>${model.maximumShear.value.toFixed(2)} k</strong> <span>${formatExtremeLocations(model.maximumShear)}</span>`;
+
+      const momentChart = document.getElementById("moment-chart");
+      momentChart.setAttribute("aria-label", `Moment diagram. Maximum absolute moment ${model.maximumMoment.value.toFixed(2)} kip-feet ${formatExtremeLocations(model.maximumMoment)}.`);
+      momentChart.innerHTML = `
+        ${buildChartFrame(model)}
+        ${buildAreaMarkup(model.momentSamples, model.baseline, "#dcefe9", "#f3e8e2")}
+        <path d="${buildLinePath(model.momentSamples)}" fill="none" stroke="#157b72" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+        ${buildPeakMarkup(model.maximumMoment.sample, "kip-ft", "#286d62", model.plotTop, model.plotBottom)}`;
+      document.getElementById("moment-maximum").innerHTML =
+        `Max |M| <strong>${model.maximumMoment.value.toFixed(2)} kip-ft</strong> <span>${formatExtremeLocations(model.maximumMoment)}</span>`;
+
+      document.getElementById("deflection-chart").innerHTML = `
+        ${buildChartFrame(model)}
+        <line x1="${model.beamStart}" y1="${model.baseline}" x2="${model.beamEnd}" y2="${model.baseline}"
+          stroke="#8c78b4" stroke-width="2" stroke-dasharray="5 5"/>
+        <text x="${(model.beamStart + model.beamEnd) / 2}" y="${model.baseline - 8}" text-anchor="middle"
+          fill="#71628f" font-size="10">Deflection is added in Stage 4</text>`;
+    }
+
+    function escapeSvgText(value) {
+      return String(value).replace(/[&<>"]/g, (character) => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;"
+      })[character]);
+    }
+
+    // Rendering functions consume the drawing model and contain no input validation or beam analysis.
+    function renderBeamDrawing(model, reactions) {
+      const svg = document.getElementById("beam-drawing");
+      const beamY = 92;
+      const supportMarkup = model.support === "simple"
+        ? `
+          <path d="M${model.beamStart - 12} 99 ${model.beamStart} 116 ${model.beamStart + 12} 99Z" fill="#dbe8e4" stroke="#76918a" stroke-width="1.2"/>
+          <line x1="${model.beamStart - 13}" y1="119" x2="${model.beamStart + 13}" y2="119" stroke="#a5b7b2" stroke-width="1.2"/>
+          <path d="M${model.beamEnd - 12} 99 ${model.beamEnd} 113 ${model.beamEnd + 12} 99Z" fill="#dbe8e4" stroke="#76918a" stroke-width="1.2"/>
+          <circle cx="${model.beamEnd - 6}" cy="117" r="3" fill="#fff" stroke="#76918a" stroke-width="1.2"/>
+          <circle cx="${model.beamEnd + 6}" cy="117" r="3" fill="#fff" stroke="#76918a" stroke-width="1.2"/>
+          <line x1="${model.beamEnd - 17}" y1="122" x2="${model.beamEnd + 17}" y2="122" stroke="#a5b7b2" stroke-width="1.2"/>
+          <line x1="${model.beamStart}" y1="146" x2="${model.beamStart}" y2="124" stroke="#157b72" stroke-width="2" marker-end="url(#arrow-up)"/>
+          <line x1="${model.beamEnd}" y1="146" x2="${model.beamEnd}" y2="124" stroke="#157b72" stroke-width="2" marker-end="url(#arrow-up)"/>
+          <text x="${model.beamStart}" y="143" text-anchor="middle" fill="#157b72" font-size="9" font-weight="700">R1 = ${reactions.left.toFixed(2)} k</text>
+          <text x="${model.beamEnd}" y="143" text-anchor="middle" fill="#157b72" font-size="9" font-weight="700">R2 = ${reactions.right.toFixed(2)} k</text>`
+        : `
+          <rect x="${model.beamStart - 18}" y="61" width="18" height="66" fill="#e7ecea" stroke="#879a95" stroke-width="1.2"/>
+          <g stroke="#a9b8b4" stroke-width="1">
+            <line x1="${model.beamStart - 18}" y1="68" x2="${model.beamStart - 26}" y2="76"/>
+            <line x1="${model.beamStart - 18}" y1="81" x2="${model.beamStart - 26}" y2="89"/>
+            <line x1="${model.beamStart - 18}" y1="94" x2="${model.beamStart - 26}" y2="102"/>
+            <line x1="${model.beamStart - 18}" y1="107" x2="${model.beamStart - 26}" y2="115"/>
+          </g>
+          <line x1="${model.beamStart + 18}" y1="146" x2="${model.beamStart + 18}" y2="124" stroke="#157b72" stroke-width="2" marker-end="url(#arrow-up)"/>
+          <text x="${model.beamStart + 18}" y="143" text-anchor="middle" fill="#157b72" font-size="9" font-weight="700">R = ${reactions.left.toFixed(2)} k</text>
+          <path d="M${model.beamStart + 42} 126a14 14 0 1 1 13-16" fill="none" stroke="#157b72" stroke-width="1.5" marker-end="url(#arrow-up)"/>
+          <text x="${model.beamStart + 70}" y="131" fill="#157b72" font-size="9" font-weight="700">M0 = ${reactions.fixedMoment.toFixed(2)} kip-ft</text>`;
+
+      const loadMarkup = model.loads.map((load, index) => {
+        const labelY = 20 + Math.min(index, 3) * 12;
+        const label = index < 4
+          ? `<text x="${(model.beamStart + model.beamEnd) / 2}" y="${labelY}" text-anchor="middle" fill="${load.color}" font-size="10" font-weight="650">${escapeSvgText(load.label)}</text>`
+          : "";
+
+        if (load.type === "point") {
+          if (load.magnitude === 0) return label;
+          return `${label}<line x1="${load.x}" y1="43" x2="${load.x}" y2="${beamY - 7}" stroke="${load.color}" stroke-width="2" marker-end="url(#arrow-down)"/>`;
+        }
+
+        const arrows = load.magnitude === 0
+          ? `<line x1="${load.xStart}" y1="43" x2="${load.xEnd}" y2="43" stroke="${load.color}" stroke-width="1.5" stroke-dasharray="4 4"/>`
+          : load.arrowPositions.map((x) =>
+            `<line x1="${x}" y1="43" x2="${x}" y2="${beamY - 7}" stroke="${load.color}" stroke-width="1.5" marker-end="url(#arrow-down)"/>`
+          ).join("");
+        const extent = `<line x1="${load.xStart}" y1="39" x2="${load.xEnd}" y2="39" stroke="${load.color}" stroke-width="1.2"/>`;
+        return `${label}${extent}${arrows}`;
+      }).join("");
+
+      const ticks = model.ticks.map((tick) => `
+        <line x1="${tick.x}" y1="154" x2="${tick.x}" y2="161" stroke="#a4b1ae" stroke-width="1"/>
+        <text x="${tick.x}" y="176" text-anchor="middle" fill="#83908d" font-size="9">${tick.position.toFixed(2).replace(/\.00$/, "")} ft</text>
+      `).join("");
+      const noLoads = model.loads.length === 0
+        ? `<text x="${(model.beamStart + model.beamEnd) / 2}" y="54" text-anchor="middle" fill="#84918e" font-size="10">No applied load rows</text>`
+        : "";
+
+      svg.innerHTML = `
+        <title id="beam-title">${escapeSvgText(model.support === "simple" ? "Simply supported beam" : "Cantilever beam")} preview</title>
+        <desc id="beam-desc">${escapeSvgText(`${model.span} ft ${model.support === "simple" ? "simply supported" : "cantilever"} beam, ${model.section}, with ${model.loads.length} applied load rows. ${model.support === "simple" ? `Calculated reactions are ${reactions.left.toFixed(2)} and ${reactions.right.toFixed(2)} kips.` : `Calculated fixed reaction is ${reactions.left.toFixed(2)} kips and fixed-end moment is ${reactions.fixedMoment.toFixed(2)} kip-feet.`}`)}</desc>
+        <defs>
+          <marker id="arrow-down" markerWidth="7" markerHeight="7" refX="3.5" refY="6" orient="auto" markerUnits="strokeWidth">
+            <path d="M0 0 3.5 6 7 0" fill="#477b9a"/>
+          </marker>
+          <marker id="arrow-up" markerWidth="7" markerHeight="7" refX="3.5" refY="1" orient="auto" markerUnits="strokeWidth">
+            <path d="M0 7 3.5 1 7 7" fill="#157b72"/>
+          </marker>
+        </defs>
+        ${loadMarkup}
+        ${noLoads}
+        <line x1="${model.beamStart}" y1="${beamY}" x2="${model.beamEnd}" y2="${beamY}" stroke="#263b37" stroke-width="6" stroke-linecap="round"/>
+        ${supportMarkup}
+        <line x1="${model.beamStart}" y1="154" x2="${model.beamEnd}" y2="154" stroke="#d7e0dd" stroke-width="1"/>
+        ${ticks}`;
+
+      document.getElementById("beam-summary").textContent =
+        `${model.support === "simple" ? "Simply supported" : "Cantilever"} · ${model.section} · ${model.span} ft span`;
+      document.getElementById("beam-caption").innerHTML = `
+        <span class="legend-item"><span class="legend-mark"></span>Applied loads · downward</span>
+        <span class="legend-item"><span class="legend-mark reaction"></span>Calculated reactions</span>
+        <span>${model.loads.length} applied ${model.loads.length === 1 ? "load row" : "load rows"}</span>`;
+    }
+
+    function setValidationStatus(message, state) {
+      validationStatus.textContent = message;
+      validationStatus.classList.toggle("error", state === "error");
+      validationStatus.classList.toggle("success", state === "success");
+    }
+
+    function updateCatalogVisibility() {
+      const isSteel = document.getElementById("material").value === "steel";
+      steelField.hidden = !isSteel;
+      lumberFields.hidden = isSteel;
+    }
+
+    function refreshBeamPreview(message) {
+      const state = readDesignInputs();
+      const errors = validateDesignInputs(state);
+      renderValidationErrors(errors);
+      updatePositionLimits(state.span);
+
+      if (errors.length > 0) {
+        setValidationStatus(`The analysis is not current. Fix the highlighted input${errors.length === 1 ? "" : "s"} to update it.`, "error");
+        return;
+      }
+
+      lastValidSpan = state.span;
+      const beamModel = computeBeamDrawingModel(state);
+      const analysis = computeBeamAnalysis(state);
+      const diagramModel = computeResponseDiagramModel(analysis, beamModel);
+      renderBeamDrawing(beamModel, analysis.reactions);
+      renderResponseDiagrams(diagramModel);
+      setValidationStatus(message || "Reactions, shear, and moment updated. Self-weight is excluded.", "success");
+    }
+
+    function handleSpanCommit() {
+      const state = readDesignInputs();
+      const validSpan = Number.isFinite(state.span) && state.span >= 0.1 && state.span <= 100;
+      if (!validSpan) {
+        refreshBeamPreview();
+        return;
+      }
+
+      const adjusted = clampLoadPositionsToSpan(state);
+      if (adjusted) {
+        renderLoadRows(state.loads.map(({ fields, ...load }) => load), state.span);
+      }
+      refreshBeamPreview(adjusted ? "Load positions outside the resized span were clamped; review uniform-load ranges." : undefined);
+    }
+
+    function clampLoadPositionsToSpan(state) {
+      let adjusted = false;
+      const clamp = (value) => Math.min(state.span, Math.max(0, value));
+
+      state.loads.forEach((load) => {
+        const values = load.type === "point"
+          ? [["position", load.position]]
+          : [["start", load.start], ["end", load.end]];
+        values.forEach(([field, value]) => {
+          if (!Number.isFinite(value)) return;
+          const bounded = clamp(value);
+          if (bounded !== value) {
+            load[field] = bounded;
+            load.fields[field].value = formatInputValue(bounded);
+            adjusted = true;
+          }
+        });
+      });
+
+      return adjusted;
+    }
+
+    function addLoadRow(type) {
+      const state = readDesignInputs();
+      if (state.loads.length >= 20) {
+        setValidationStatus("A maximum of 20 load rows is allowed.", "error");
+        return;
+      }
+
+      const defaultSpan = Number.isFinite(state.span) && state.span >= 0.1 && state.span <= 100
+        ? state.span
+        : lastValidSpan;
+      const loads = state.loads.map(({ fields, ...load }) => load);
+      loads.push(createLoad(type, defaultSpan, nextLoadId++));
+      renderLoadRows(loads, defaultSpan);
+      refreshBeamPreview();
+    }
+
+    function removeLoadRow(id) {
+      const state = readDesignInputs();
+      const loads = state.loads
+        .filter((load) => load.id !== id)
+        .map(({ fields, ...load }) => load);
+      const span = Number.isFinite(state.span) && state.span >= 0.1 && state.span <= 100
+        ? state.span
+        : lastValidSpan;
+      renderLoadRows(loads, span);
+      refreshBeamPreview();
+    }
+
+    function changeLoadType(id, type) {
+      const state = readDesignInputs();
+      const loads = state.loads.map(({ fields, ...load }) => {
+        if (load.id !== id) return load;
+        const span = Number.isFinite(state.span) && state.span >= 0.1 && state.span <= 100
+          ? state.span
+          : lastValidSpan;
+        return createLoad(type, span, id);
+      });
+      renderLoadRows(loads, Number.isFinite(state.span) && state.span >= 0.1 ? state.span : lastValidSpan);
+      refreshBeamPreview();
+    }
+
+    let initialLoads = [{ id: 1, type: "uniform", magnitude: 1, start: 0, end: 20 }];
+    renderLoadRows(initialLoads, 20);
+    updateCatalogVisibility();
+    refreshBeamPreview();
+
+    form.addEventListener("input", () => refreshBeamPreview());
+    document.getElementById("span").addEventListener("change", handleSpanCommit);
+    document.getElementById("span").addEventListener("blur", handleSpanCommit);
+
+    form.addEventListener("change", (event) => {
+      const target = event.target;
+      if (target.id === "material") {
+        updateCatalogVisibility();
+        refreshBeamPreview();
+        return;
+      }
+
+      if (target.matches("[data-load-type]")) {
+        const row = target.closest(".load-row");
+        changeLoadType(Number(row.dataset.loadId), target.value);
+      }
+    });
+
+    form.addEventListener("click", (event) => {
+      const addButton = event.target.closest("[data-add-load]");
+      if (addButton) {
+        addLoadRow(addButton.dataset.addLoad);
+        return;
+      }
+
+      const removeButton = event.target.closest("[data-remove-load]");
+      if (removeButton) {
+        const row = removeButton.closest(".load-row");
+        removeLoadRow(Number(row.dataset.loadId));
+      }
+    });
+  </script>
 </body>
 </html>
