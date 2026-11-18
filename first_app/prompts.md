@@ -13,3 +13,18 @@
 - Asked: "Commit these changes"
   Changed: Committed the first_app project files only.
   Worked: Yes.
+- Asked: "Read spec.md... First, tell me in a few sentences what you think the app will do. Then look at the spec as a whole: is anything the app needs missing, and are the sections in a sensible order? Don't go into the details of each section yet."
+  Changed: Read the spec and provided a high-level interpretation and review; did not change the spec or build the app.
+  Worked: Yes.
+- Asked: "Let's work on just the Inputs section of spec.md. Don't build anything. Ask me about anything that is unclear, tell me if any inputs are missing, and check that each one has units, a range, a default, and a control."
+  Changed: Rewrote only the Inputs section to specify units, ranges, defaults, controls, the beam-property catalog, and self-weight toggle. Did not build the app.
+  Worked: Yes. Existing validation may need reconciliation because self-weight is enabled by default.
+- Asked: "Now the Calculations section. Don't build anything. Check each equation and its units, list any variable that isn't defined, and tell me if any calculation the outputs need is missing."
+  Changed: Reviewed equations, units, variables, and output dependencies; reported findings without editing the spec or building the app.
+  Worked: Yes.
+- Asked: "look over the calculations section again, let me know what suggestions you'd make"
+  Changed: Re-reviewed the updated Calculations section and gave focused suggestions; did not edit the spec or build the app.
+  Worked: Yes.
+- Asked: "commit to this"
+  Changed: Committed the current spec and prompt-log changes only.
+  Worked: Yes.
