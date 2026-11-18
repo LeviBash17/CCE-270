@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f3f6f5">
-  <title>Beam Designer — Stage 3 Analysis</title>
+  <title>Beam Designer — Overhang Analysis</title>
   <style>
     :root {
       color-scheme: light;
@@ -287,6 +287,32 @@
       font-size: 11px;
       pointer-events: none;
       transform: translateY(-50%);
+    }
+
+    .self-weight-toggle {
+      display: flex;
+      align-items: flex-start;
+      gap: 9px;
+      margin-top: 13px;
+      color: #465653;
+      font-size: 11px;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    .self-weight-toggle input {
+      width: 15px;
+      height: 15px;
+      margin: 0;
+      accent-color: var(--teal);
+    }
+
+    .self-weight-toggle small {
+      display: block;
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 9px;
+      font-weight: 450;
     }
 
     .lumber-preview {
@@ -713,6 +739,13 @@
       background: #38956f;
     }
 
+    .pass-badge.fail {
+      color: #a43f3f;
+      background: #faeaea;
+    }
+
+    .pass-badge.fail::before { background: #c64e4e; }
+
     .check-values {
       display: flex;
       align-items: baseline;
@@ -758,12 +791,13 @@
 
     .ratio-fill {
       height: 100%;
+      width: var(--utilization, 0%);
       border-radius: inherit;
       background: #d7a043;
     }
 
-    .ratio-fill.bending { width: 75%; }
-    .ratio-fill.deflection { width: 91%; }
+    .ratio-fill.pass { background: #38956f; }
+    .ratio-fill.fail { background: #c64e4e; }
 
     .ratio-key {
       display: flex;
@@ -843,6 +877,11 @@
     }
 
     .primary-button:hover { background: var(--teal-dark); }
+    .primary-button:disabled {
+      border-color: #bdc9c5;
+      background: #bdc9c5;
+      cursor: not-allowed;
+    }
 
     .footer-note {
       margin: 0;
@@ -935,7 +974,7 @@
         <p class="brand-subtitle">Beam analysis workspace</p>
       </div>
     </div>
-    <div class="preview-badge">Stage 3 · analysis active</div>
+    <div class="preview-badge">Beam analysis · overhangs supported</div>
   </header>
 
   <main>
@@ -943,7 +982,7 @@
       <div>
         <p class="eyebrow">Beam check</p>
         <h1 id="page-title">Design your beam</h1>
-        <p class="intro-copy">Set the support, span, and loads to see the reactions, shear, and moment update. Deflection and design checks remain placeholders.</p>
+        <p class="intro-copy">See beam response, service deflection, bending checks, and the lightest passing section in the selected material.</p>
       </div>
       <div class="example-pill">
         <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
@@ -961,7 +1000,7 @@
             <h2 id="inputs-title">Beam inputs</h2>
             <p>Interactive inputs · sample catalog</p>
           </div>
-          <span class="static-chip">Stage 3</span>
+          <span class="static-chip">Overhangs</span>
         </div>
         <form class="panel-body" id="beam-input-form" novalidate>
           <section class="form-section" aria-labelledby="setup-label">
@@ -972,13 +1011,33 @@
                 <select class="control" id="support" name="support">
                   <option value="simple" selected>Simply supported</option>
                   <option value="cantilever">Cantilever</option>
+                  <option value="overhang">Overhanging beam</option>
                 </select>
                 <span class="field-error" aria-live="polite"></span>
               </div>
               <div class="field">
-                <label for="span">Span</label>
+                <label for="span" id="span-label">Span</label>
                 <div class="input-unit">
                   <input class="control" id="span" name="span" type="number" value="20" min="0.1" max="100" step="0.1" required>
+                  <span>ft</span>
+                </div>
+                <span class="field-error" aria-live="polite"></span>
+              </div>
+            </div>
+
+            <div class="field-grid" id="overhang-fields" hidden style="margin-top: 12px">
+              <div class="field">
+                <label for="left-overhang">Left overhang</label>
+                <div class="input-unit">
+                  <input class="control" id="left-overhang" name="left-overhang" type="number" value="0" min="0" max="100" step="0.1" required>
+                  <span>ft</span>
+                </div>
+                <span class="field-error" aria-live="polite"></span>
+              </div>
+              <div class="field">
+                <label for="right-overhang">Right overhang</label>
+                <div class="input-unit">
+                  <input class="control" id="right-overhang" name="right-overhang" type="number" value="0" min="0" max="100" step="0.1" required>
                   <span>ft</span>
                 </div>
                 <span class="field-error" aria-live="polite"></span>
@@ -1004,6 +1063,11 @@
                 <span class="field-error" aria-live="polite"></span>
               </div>
             </div>
+
+            <label class="self-weight-toggle" for="include-self-weight">
+              <input id="include-self-weight" name="include-self-weight" type="checkbox">
+              <span>Include beam self-weight <small>Off by default; added as a uniform load.</small></span>
+            </label>
 
             <div class="lumber-preview" id="lumber-fields" hidden>
               <div class="lumber-preview-head">
@@ -1033,7 +1097,7 @@
                   <span class="field-error" aria-live="polite"></span>
                 </div>
               </div>
-              <p class="catalog-note">UI sample options only; section properties and analysis are not implemented in this stage.</p>
+              <p class="catalog-note">AWC 2024 2x10 No. 1/No. 2 row: Fb 1,105 psi before the 13% reduction, E 1.4 million psi. Member weight is estimated from 35 lb/ft³.</p>
             </div>
           </section>
 
@@ -1051,12 +1115,12 @@
                 Add uniform load
               </button>
             </div>
-            <p class="validation-status" id="validation-status" role="status" aria-live="polite">Reactions, shear, and moment update from valid inputs. Self-weight is excluded.</p>
+            <p class="validation-status" id="validation-status" role="status" aria-live="polite">Analysis updates from valid inputs. Self-weight is excluded.</p>
           </section>
 
           <div class="mockup-note" role="note">
             <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="6.25" stroke="currentColor" stroke-width="1.3"/><path d="M8 7.1v3.4M8 4.7h.01" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-            <span>Stage 3 calculates reactions, shear, and moment from applied loads. Self-weight, deflection, design checks, and section recommendation are not calculated.</span>
+            <span>Checks are simplified screening calculations. They do not include shear capacity, lateral-torsional buckling, connections, or code load combinations.</span>
           </div>
         </form>
       </aside>
@@ -1070,9 +1134,9 @@
             </div>
             <span class="static-chip">Analysis active</span>
           </div>
-          <svg class="beam-svg" id="beam-drawing" viewBox="0 0 780 200" role="img" aria-labelledby="beam-title beam-desc">
+          <svg class="beam-svg" id="beam-drawing" viewBox="0 0 780 216" role="img" aria-labelledby="beam-title beam-desc">
             <title id="beam-title">Beam and load preview</title>
-            <desc id="beam-desc">The beam illustration updates from the current valid inputs. Reactions are static placeholders.</desc>
+            <desc id="beam-desc">The beam illustration updates from the current valid inputs.</desc>
             <defs>
               <marker id="arrow-down" markerWidth="7" markerHeight="7" refX="3.5" refY="6" orient="auto" markerUnits="strokeWidth">
                 <path d="M0 0 3.5 6 7 0" fill="#477b9a"/>
@@ -1141,7 +1205,7 @@
           <div class="diagram-heading">
             <div>
               <h2 id="diagrams-title">Response diagrams</h2>
-              <p>Shear and moment use current inputs · deflection is a Stage 4 placeholder</p>
+              <p>Includes applied loads and selected self-weight setting</p>
             </div>
           </div>
 
@@ -1164,15 +1228,15 @@
           <section class="chart" aria-labelledby="deflection-title">
             <div class="chart-topline">
               <div class="chart-title" id="deflection-title"><span class="swatch deflection"></span>Deflected shape</div>
-              <div class="chart-maximum"><strong>Stage 4 placeholder</strong></div>
+              <div class="chart-maximum" id="deflection-maximum"></div>
             </div>
-            <svg class="chart-svg" id="deflection-chart" viewBox="0 0 780 142" role="img" aria-label="Deflection analysis is planned for Stage 4."></svg>
+            <svg class="chart-svg" id="deflection-chart" viewBox="0 0 780 142" role="img" aria-label="Deflection diagram will update from valid inputs."></svg>
           </section>
 
         </article>
 
-        <section class="checks-grid" aria-label="Placeholder design checks">
-          <article class="check-card" title="Preview only: bending stress is compared with allowable bending stress.">
+        <section class="checks-grid" aria-label="Design checks">
+          <article class="check-card" id="bending-check-card" title="Maximum elastic bending stress compared with the section screening allowable.">
             <div class="check-head">
               <div class="check-title-wrap">
                 <span class="check-icon" aria-hidden="true">
@@ -1183,20 +1247,20 @@
                   <p class="check-subtitle">Stress vs. allowable</p>
                 </div>
               </div>
-              <span class="pass-badge">PASS</span>
+              <span class="pass-badge" id="bending-status">PASS</span>
             </div>
             <div class="check-values">
-              <div class="actual-value">17.96 <small>ksi</small></div>
-              <div class="allowable-value">Allowable<strong>24.00 ksi</strong></div>
+              <div class="actual-value" id="bending-stress">0.00 <small>ksi</small></div>
+              <div class="allowable-value">Allowable<strong id="bending-allowable">0.00 ksi</strong></div>
             </div>
-            <div class="ratio-track" role="progressbar" aria-label="Bending utilization placeholder" aria-valuemin="0" aria-valuemax="100" aria-valuenow="75">
-              <div class="ratio-fill bending"></div>
+            <div class="ratio-track" id="bending-progress" role="progressbar" aria-label="Bending utilization" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+              <div class="ratio-fill"></div>
             </div>
             <div class="ratio-key"><span>0%</span><span>70%</span><span>100%</span></div>
-            <div class="ratio-value">Utilization <strong>74.8%</strong></div>
+            <div class="ratio-value">Utilization <strong id="bending-utilization">0.0%</strong></div>
           </article>
 
-          <article class="check-card" title="Preview only: maximum deflection is compared with the L/360 placeholder limit.">
+          <article class="check-card" id="deflection-check-card" title="Maximum elastic deflection compared with the selected L/240 span limit.">
             <div class="check-head">
               <div class="check-title-wrap">
                 <span class="check-icon deflection" aria-hidden="true">
@@ -1207,37 +1271,37 @@
                   <p class="check-subtitle">Maximum vs. span limit</p>
                 </div>
               </div>
-              <span class="pass-badge">PASS</span>
+              <span class="pass-badge" id="deflection-status">PASS</span>
             </div>
             <div class="check-values">
-              <div class="actual-value">0.609 <small>in</small></div>
-              <div class="allowable-value">Allowable · L/360<strong>0.667 in</strong></div>
+              <div class="actual-value" id="maximum-deflection">0.000 <small>in</small></div>
+              <div class="allowable-value">Allowable · L/240<strong id="deflection-allowable">0.000 in</strong></div>
             </div>
-            <div class="ratio-track" role="progressbar" aria-label="Deflection utilization placeholder" aria-valuemin="0" aria-valuemax="100" aria-valuenow="91">
-              <div class="ratio-fill deflection"></div>
+            <div class="ratio-track" id="deflection-progress" role="progressbar" aria-label="Deflection utilization" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+              <div class="ratio-fill"></div>
             </div>
             <div class="ratio-key"><span>0%</span><span>70%</span><span>100%</span></div>
-            <div class="ratio-value">Utilization <strong>91.3%</strong></div>
+            <div class="ratio-value">Utilization <strong id="deflection-utilization">0.0%</strong></div>
           </article>
         </section>
 
-        <section class="recommendation" aria-label="Placeholder section recommendation">
+        <section class="recommendation" aria-label="Section recommendation">
           <div class="recommendation-main">
             <span class="recommendation-icon" aria-hidden="true">
               <svg width="19" height="19" viewBox="0 0 20 20" fill="none"><path d="M10 2.3 12.1 7l5.1.5-3.8 3.4 1.1 5-4.5-2.6-4.5 2.6 1.1-5L2.8 7.5 7.9 7 10 2.3Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>
             </span>
             <div>
-              <h2>Lightest passing section <span class="alt-tag">· placeholder</span></h2>
-              <p><strong>W12x26</strong> · 26 lb/ft · sample recommendation only</p>
+              <h2 id="recommendation-title">Lightest passing section</h2>
+              <p id="recommendation-summary">Calculating available sections…</p>
             </div>
           </div>
-          <button class="primary-button" type="button">
+          <button class="primary-button" id="use-recommendation" type="button">
             Use recommendation
             <svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2.5 7h9m0 0L7.8 3.3M11.5 7l-3.7 3.7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
         </section>
 
-        <p class="footer-note">Stage 3 · reactions, shear, and moment are calculated from applied loads only. Deflection and design checks remain placeholders.</p>
+        <p class="footer-note">Educational screening only, not a construction design. Steel assumes ASTM A992 (Fy = 50 ksi, E = 29,000 ksi), full lateral bracing, and a simplified 0.66Fy bending allowable; wood uses <a href="https://web-media.awc.org/wp-content/uploads/2023/11/17210143/AWC_DVJR2024_20231130_AWCWebsite.pdf" target="_blank" rel="noreferrer">AWC 2024 reference values</a> with a 13% reduction to omit repetitive-member benefit. W-shape properties are from the <a href="https://www.aisc.org/aisc/publications/steel-construction-manual/shapes-database-v160/" target="_blank" rel="noreferrer">AISC Shapes Database v16.0</a>. Self-weight for lumber is estimated from 35 lb/ft³.</p>
       </section>
     </div>
   </main>
@@ -1245,8 +1309,21 @@
     "use strict";
 
     const catalogs = {
-      steel: ["W12x26", "W12x22", "W14x30"],
-      lumber: [{ size: "2x10", species: "SPF", grade: "No. 2" }]
+      steel: [
+        { name: "W12x26", weight: 26, Ix: 204, Sx: 33.4, E: 29000, Fb: 33 },
+        { name: "W12x22", weight: 22, Ix: 156, Sx: 25.4, E: 29000, Fb: 33 },
+        { name: "W14x30", weight: 30, Ix: 291, Sx: 42, E: 29000, Fb: 33 }
+      ],
+      lumber: [{
+        size: "2x10",
+        species: "SPF",
+        grade: "No. 2",
+        weight: 3.37,
+        Ix: 98.88,
+        Sx: 21.39,
+        E: 1400,
+        Fb: 0.96135
+      }]
     };
     const loadColors = ["#477b9a", "#ba8740", "#8c78b4", "#438a78", "#b36b5f"];
     const form = document.getElementById("beam-input-form");
@@ -1255,14 +1332,15 @@
     const steelField = document.getElementById("steel-section-field");
     const lumberFields = document.getElementById("lumber-fields");
     let nextLoadId = 2;
-    let lastValidSpan = 20;
+    let lastValidBeamLength = 20;
+    let currentRecommendation = null;
 
-    function createLoad(type, span, id) {
+    function createLoad(type, beamLength, id) {
       if (type === "point") {
-        return { id, type, magnitude: 0, position: span / 2 };
+        return { id, type, magnitude: 0, position: beamLength / 2 };
       }
 
-      return { id, type: "uniform", magnitude: 0, start: 0, end: span };
+      return { id, type: "uniform", magnitude: 0, start: 0, end: beamLength };
     }
 
     function formatInputValue(value) {
@@ -1282,7 +1360,7 @@
         </div>`;
     }
 
-    function renderLoadRows(loads, span) {
+    function renderLoadRows(loads, beamLength) {
       if (loads.length === 0) {
         loadRows.innerHTML = '<p class="helper">No applied load rows.</p>';
       } else {
@@ -1291,10 +1369,10 @@
           const isPoint = load.type === "point";
           const fields = isPoint
             ? renderNumericLoadField(rowId, "magnitude", "Magnitude", load.magnitude, "kip", 0, 1000, 0.1)
-              + renderNumericLoadField(rowId, "position", "Position", load.position, "ft", 0, span, 0.1)
+              + renderNumericLoadField(rowId, "position", "Position", load.position, "ft", 0, beamLength, 0.1)
             : renderNumericLoadField(rowId, "magnitude", "Intensity", load.magnitude, "kip/ft", 0, 100, 0.01)
-              + renderNumericLoadField(rowId, "start", "Start", load.start, "ft", 0, span, 0.1)
-              + renderNumericLoadField(rowId, "end", "End", load.end, "ft", 0, span, 0.1);
+              + renderNumericLoadField(rowId, "start", "Start", load.start, "ft", 0, beamLength, 0.1)
+              + renderNumericLoadField(rowId, "end", "End", load.end, "ft", 0, beamLength, 0.1);
 
           return `
             <div class="load-row" data-load-id="${load.id}" data-rendered-type="${load.type}">
@@ -1359,13 +1437,63 @@
         support: document.getElementById("support").value,
         span: readNumber(spanInput),
         spanInput,
+        leftOverhang: readNumber(document.getElementById("left-overhang")),
+        rightOverhang: readNumber(document.getElementById("right-overhang")),
+        leftOverhangInput: document.getElementById("left-overhang"),
+        rightOverhangInput: document.getElementById("right-overhang"),
         material: document.getElementById("material").value,
         steelSection: document.getElementById("steel-section").value,
         lumberSize: document.getElementById("lumber-size").value,
         lumberSpecies: document.getElementById("lumber-species").value,
         lumberGrade: document.getElementById("lumber-grade").value,
+        includeSelfWeight: document.getElementById("include-self-weight").checked,
         loads
       };
+    }
+
+    function getBeamLength(state) {
+      return state.span + (state.support === "overhang"
+        ? state.leftOverhang + state.rightOverhang
+        : 0);
+    }
+
+    function getSupportPositions(state) {
+      if (state.support === "overhang") {
+        return {
+          left: state.leftOverhang,
+          right: state.leftOverhang + state.span
+        };
+      }
+
+      return state.support === "simple"
+        ? { left: 0, right: state.span }
+        : { left: 0, right: null };
+    }
+
+    function getLoadRowLength(state) {
+      const beamLength = getBeamLength(state);
+      return Number.isFinite(beamLength) && beamLength >= 0.1 && beamLength <= 100
+        ? beamLength
+        : lastValidBeamLength;
+    }
+
+    function findSelectedSection(state) {
+      if (state.material === "steel") {
+        return catalogs.steel.find((section) => section.name === state.steelSection);
+      }
+
+      return catalogs.lumber.find((section) =>
+        section.size === state.lumberSize &&
+        section.species === state.lumberSpecies &&
+        section.grade === state.lumberGrade);
+    }
+
+    function getCandidateSections(material) {
+      return catalogs[material].slice().sort((first, second) => {
+        const firstName = first.name || first.size;
+        const secondName = second.name || second.size;
+        return first.weight - second.weight || firstName.localeCompare(secondName);
+      });
     }
 
     function validateDesignInputs(state) {
@@ -1378,17 +1506,57 @@
         });
       }
 
-      const maxPosition = validSpan ? state.span : 100;
-      if (!["simple", "cantilever"].includes(state.support)) {
+      if (!["simple", "cantilever", "overhang"].includes(state.support)) {
         errors.push({ input: document.getElementById("support"), message: "Choose a listed support type." });
       }
 
-      if (state.material === "steel" && !catalogs.steel.includes(state.steelSection)) {
+      let validOverhangs = true;
+      if (state.support === "overhang") {
+        for (const [input, value, label] of [
+          [state.leftOverhangInput, state.leftOverhang, "Left"],
+          [state.rightOverhangInput, state.rightOverhang, "Right"]
+        ]) {
+          if (!Number.isFinite(value) || value < 0 || value > 100) {
+            validOverhangs = false;
+            errors.push({ input, message: `${label} overhang must be from 0 to 100 ft.` });
+          }
+        }
+
+        if (validOverhangs && state.leftOverhang === 0 && state.rightOverhang === 0) {
+          errors.push({
+            input: state.leftOverhangInput,
+            message: "At least one overhang must be greater than 0 ft."
+          });
+          errors.push({
+            input: state.rightOverhangInput,
+            message: "At least one overhang must be greater than 0 ft."
+          });
+        } else if (validOverhangs && validSpan && getBeamLength(state) > 100) {
+          errors.push({
+            input: state.leftOverhangInput,
+            message: "Span plus overhangs must not exceed 100 ft."
+          });
+          errors.push({
+            input: state.rightOverhangInput,
+            message: "Span plus overhangs must not exceed 100 ft."
+          });
+        }
+      }
+
+      const validGeometry = validSpan &&
+        (state.support !== "overhang" ||
+          (validOverhangs && (state.leftOverhang > 0 || state.rightOverhang > 0) && getBeamLength(state) <= 100));
+      const maxPosition = validGeometry ? getBeamLength(state) : 100;
+
+      if (!["steel", "lumber"].includes(state.material)) {
+        errors.push({ input: document.getElementById("material"), message: "Choose a listed material." });
+      }
+
+      if (state.material === "steel" && !findSelectedSection(state)) {
         errors.push({ input: document.getElementById("steel-section"), message: "Choose a listed W-shape." });
       }
 
-      if (state.material === "lumber" && !catalogs.lumber.some((entry) =>
-        entry.size === state.lumberSize && entry.species === state.lumberSpecies && entry.grade === state.lumberGrade)) {
+      if (state.material === "lumber" && !findSelectedSection(state)) {
         errors.push({ input: document.getElementById("lumber-size"), message: "Choose a listed lumber entry." });
       }
 
@@ -1454,18 +1622,23 @@
       });
     }
 
-    function updatePositionLimits(span) {
-      const max = Number.isFinite(span) && span >= 0.1 && span <= 100 ? span : 100;
+    function updatePositionLimits(state) {
+      const beamLength = getBeamLength(state);
+      const max = Number.isFinite(beamLength) && beamLength >= 0.1 && beamLength <= 100
+        ? beamLength
+        : 100;
       loadRows.querySelectorAll('[data-load-field="position"], [data-load-field="start"], [data-load-field="end"]')
         .forEach((input) => input.max = String(max));
     }
 
     // This function computes only SVG coordinates and labels, never beam response values.
-    function computeBeamDrawingModel(state) {
+    function computeBeamDrawingModel(state, sectionProperties) {
       const beamStart = state.support === "cantilever" ? 100 : 80;
       const beamEnd = 700;
       const beamWidth = beamEnd - beamStart;
-      const xAt = (position) => beamStart + (position / state.span) * beamWidth;
+      const beamLength = getBeamLength(state);
+      const supportPositions = getSupportPositions(state);
+      const xAt = (position) => beamStart + (position / beamLength) * beamWidth;
       const section = state.material === "steel"
         ? state.steelSection
         : `${state.lumberSize} · ${state.lumberSpecies} · ${state.lumberGrade}`;
@@ -1482,7 +1655,7 @@
           };
         }
 
-        const count = Math.max(2, Math.min(14, Math.ceil(((load.end - load.start) / state.span) * 12) + 1));
+        const count = Math.max(2, Math.min(14, Math.ceil(((load.end - load.start) / beamLength) * 12) + 1));
         const arrowPositions = Array.from({ length: count }, (_, arrowIndex) => {
           const fraction = count === 1 ? 0 : arrowIndex / (count - 1);
           return xAt(load.start + (load.end - load.start) * fraction);
@@ -1500,17 +1673,36 @@
         };
       });
 
+      const selfWeight = state.includeSelfWeight ? {
+        type: "uniform",
+        color: "#7d8986",
+        magnitude: sectionProperties.weight / 1000,
+        start: 0,
+        end: beamLength,
+        xStart: beamStart,
+        xEnd: beamEnd,
+        arrowPositions: Array.from({ length: 11 }, (_, index) =>
+          beamStart + beamWidth * index / 10),
+        label: `Self-weight · ${(sectionProperties.weight / 1000).toFixed(3)} kip/ft`
+      } : null;
+
       return {
         support: state.support,
         span: state.span,
+        beamLength,
+        leftOverhang: state.support === "overhang" ? state.leftOverhang : 0,
+        rightOverhang: state.support === "overhang" ? state.rightOverhang : 0,
         beamStart,
         beamEnd,
+        leftSupportX: xAt(supportPositions.left),
+        rightSupportX: supportPositions.right === null ? null : xAt(supportPositions.right),
         section,
         ticks: [0, 0.25, 0.5, 0.75, 1].map((fraction) => ({
-          position: state.span * fraction,
+          position: beamLength * fraction,
           x: beamStart + beamWidth * fraction
         })),
-        loads
+        loads,
+        selfWeight
       };
     }
 
@@ -1542,7 +1734,8 @@
         };
       }
 
-      const right = resultants.totalMoment / state.span;
+      const supportPositions = getSupportPositions(state);
+      const right = (resultants.totalMoment - supportPositions.left * resultants.totalLoad) / state.span;
       return {
         left: resultants.totalLoad - right,
         right,
@@ -1551,7 +1744,17 @@
     }
 
     function calculateShearValue(state, reactions, position, side) {
-      const reaction = reactions.left;
+      const supports = getSupportPositions(state);
+      const supportReactions = state.support === "cantilever"
+        ? [[supports.left, reactions.left]]
+        : [[supports.left, reactions.left], [supports.right, reactions.right]];
+      let reaction = 0;
+      supportReactions.forEach(([supportPosition, value]) => {
+        const isIncluded = side === "left"
+          ? supportPosition < position - 1e-9
+          : supportPosition <= position + 1e-9;
+        if (isIncluded) reaction += value;
+      });
       let appliedPointLoads = 0;
       let appliedUniformLoads = 0;
 
@@ -1587,7 +1790,11 @@
         return -momentFromRight;
       }
 
-      let moment = reactions.left * position;
+      const supportPositions = getSupportPositions(state);
+      let moment = reactions.left * Math.max(0, position - supportPositions.left);
+      if (state.support === "overhang") {
+        moment += reactions.right * Math.max(0, position - supportPositions.right);
+      }
       state.loads.forEach((load) => {
         if (load.type === "point") {
           moment -= load.magnitude * Math.max(0, position - load.position);
@@ -1621,9 +1828,13 @@
     function computeBeamAnalysis(state) {
       const resultants = calculateLoadResultants(state);
       const reactions = calculateReactions(state, resultants);
-      const gridCount = Math.ceil(state.span * 4);
+      const beamLength = getBeamLength(state);
+      const supportPositions = getSupportPositions(state);
+      const gridCount = Math.ceil(beamLength * 4);
       const positions = Array.from({ length: gridCount + 1 }, (_, index) =>
-        state.span * index / gridCount);
+        beamLength * index / gridCount);
+      positions.push(supportPositions.left);
+      if (supportPositions.right !== null) positions.push(supportPositions.right);
 
       state.loads.forEach((load) => {
         positions.push(load.type === "point" ? load.position : load.start);
@@ -1652,7 +1863,12 @@
       plotPositions.forEach((position) => {
         const hasPointLoad = state.loads.some((load) =>
           load.type === "point" && load.magnitude > 0 && Math.abs(load.position - position) < 1e-9);
-        if (hasPointLoad) {
+        const hasSupportReaction = [
+          [supportPositions.left, reactions.left],
+          [supportPositions.right, reactions.right]
+        ].some(([supportPosition, value]) =>
+          supportPosition !== null && Math.abs(supportPosition - position) < 1e-9 && Math.abs(value) > 1e-9);
+        if (hasPointLoad || hasSupportReaction) {
           shearSamples.push(
             { position, value: calculateShearValue(state, reactions, position, "left") },
             { position, value: calculateShearValue(state, reactions, position, "right") }
@@ -1672,6 +1888,102 @@
         maximumShear: findAbsoluteExtremum(shearSamples),
         maximumMoment: findAbsoluteExtremum(momentSamples)
       };
+    }
+
+    function buildAnalysisState(state, section) {
+      const loads = state.loads.map(({ fields, ...load }) => load);
+      if (state.includeSelfWeight) {
+        loads.push({
+          id: "self-weight",
+          type: "uniform",
+          magnitude: section.weight / 1000,
+          start: 0,
+          end: getBeamLength(state)
+        });
+      }
+
+      return { ...state, loads };
+    }
+
+    function computeDeflection(state, analysis, section) {
+      const beamLength = getBeamLength(state);
+      const supports = getSupportPositions(state);
+      const intervalCount = Math.max(100, Math.ceil(beamLength * 40));
+      const positions = Array.from({ length: intervalCount + 1 }, (_, index) =>
+        beamLength * index / intervalCount);
+      positions.push(supports.left);
+      if (supports.right !== null) positions.push(supports.right);
+      state.loads.forEach((load) => {
+        positions.push(load.type === "point" ? load.position : load.start);
+        if (load.type === "uniform") positions.push(load.end);
+      });
+      const samplesAt = uniquePositions(positions);
+      const curvatures = samplesAt.map((position) =>
+        -calculateMomentValue(state, analysis.reactions, position) * 12 / (section.E * section.Ix));
+      const slopeFromCurvature = [0];
+      const displacementFromCurvature = [0];
+
+      for (let index = 1; index < samplesAt.length; index += 1) {
+        const distance = (samplesAt[index] - samplesAt[index - 1]) * 12;
+        const previousCurvature = curvatures[index - 1];
+        const currentCurvature = curvatures[index];
+        slopeFromCurvature.push(
+          slopeFromCurvature[index - 1] + (previousCurvature + currentCurvature) * distance / 2
+        );
+        displacementFromCurvature.push(
+          displacementFromCurvature[index - 1] +
+          slopeFromCurvature[index - 1] * distance +
+          distance * distance * (previousCurvature / 3 + currentCurvature / 6)
+        );
+      }
+
+      let initialSlope = 0;
+      let initialDisplacement = 0;
+      if (state.support !== "cantilever") {
+        const leftIndex = samplesAt.findIndex((position) => Math.abs(position - supports.left) < 1e-9);
+        const rightIndex = samplesAt.findIndex((position) => Math.abs(position - supports.right) < 1e-9);
+        const supportSpanInches = (supports.right - supports.left) * 12;
+        initialSlope = -(displacementFromCurvature[rightIndex] - displacementFromCurvature[leftIndex]) /
+          supportSpanInches;
+        initialDisplacement = -displacementFromCurvature[leftIndex] - initialSlope * supports.left * 12;
+      }
+      const samples = samplesAt.map((position, index) => ({
+        position,
+        value: displacementFromCurvature[index] + initialSlope * position * 12 + initialDisplacement
+      }));
+      const maximum = findAbsoluteExtremum(samples);
+
+      const supportSpanInches = state.support === "cantilever"
+        ? state.span * 12
+        : (supports.right - supports.left) * 12;
+      return {
+        samples,
+        maximum,
+        allowable: supportSpanInches / 240
+      };
+    }
+
+    function calculateSectionResult(state, section) {
+      const analysisState = buildAnalysisState(state, section);
+      const analysis = computeBeamAnalysis(analysisState);
+      const deflection = computeDeflection(analysisState, analysis, section);
+      const bendingStress = analysis.maximumMoment.value * 12 / section.Sx;
+
+      return {
+        section,
+        analysisState,
+        analysis,
+        deflection,
+        bendingStress,
+        bendingPass: bendingStress <= section.Fb,
+        deflectionPass: deflection.maximum.value <= deflection.allowable
+      };
+    }
+
+    function recommendSection(state) {
+      return getCandidateSections(state.material)
+        .map((section) => calculateSectionResult(state, section))
+        .find((result) => result.bendingPass && result.deflectionPass) || null;
     }
 
     function formatPosition(position) {
@@ -1696,12 +2008,12 @@
       return `at ${locations.join(" / ")}${groups.length > 3 ? " …" : ""}`;
     }
 
-    function computeResponseDiagramModel(analysis, beamModel) {
+    function computeResponseDiagramModel(analysis, beamModel, deflection) {
       const plotTop = 12;
       const plotBottom = 117;
       const baseline = (plotTop + plotBottom) / 2;
       const plotHeight = plotBottom - plotTop;
-      const xScale = (beamModel.beamEnd - beamModel.beamStart) / beamModel.span;
+      const xScale = (beamModel.beamEnd - beamModel.beamStart) / beamModel.beamLength;
       const mapSamples = (samples, maximum) => {
         const valueScale = (plotHeight * 0.43) / (maximum || 1);
         return samples.map((sample) => ({
@@ -1718,6 +2030,20 @@
 
       const shearSamples = mapSamples(analysis.shearSamples, analysis.maximumShear.value);
       const momentSamples = mapSamples(analysis.momentSamples, analysis.maximumMoment.value);
+      const deflectionBaseline = plotTop + 8;
+      const deflectionScale = (plotBottom - deflectionBaseline - 8) / (deflection.maximum.value || 1);
+      const deflectionSamples = deflection.samples.map((sample) => ({
+        position: sample.position,
+        value: sample.value,
+        x: beamModel.beamStart + sample.position * xScale,
+        y: deflectionBaseline + sample.value * deflectionScale
+      }));
+      const maximumDeflection = {
+        ...deflection.maximum,
+        sample: deflectionSamples.find((sample) =>
+          Math.abs(sample.position - deflection.maximum.sample.position) < 1e-9 &&
+          Math.abs(sample.value - deflection.maximum.sample.value) < 1e-9)
+      };
       const mapExtremum = (extremum, samples) => ({
         ...extremum,
         sample: samples.find((sample) =>
@@ -1734,6 +2060,9 @@
         ticks,
         shearSamples,
         momentSamples,
+        deflectionSamples,
+        deflectionBaseline,
+        maximumDeflection,
         maximumShear: mapExtremum(analysis.maximumShear, shearSamples),
         maximumMoment: mapExtremum(analysis.maximumMoment, momentSamples)
       };
@@ -1798,12 +2127,19 @@
       document.getElementById("moment-maximum").innerHTML =
         `Max |M| <strong>${model.maximumMoment.value.toFixed(2)} kip-ft</strong> <span>${formatExtremeLocations(model.maximumMoment)}</span>`;
 
-      document.getElementById("deflection-chart").innerHTML = `
+      const deflectionSample = model.maximumDeflection.sample;
+      const deflectionChart = document.getElementById("deflection-chart");
+      deflectionChart.setAttribute("aria-label",
+        `Deflection diagram. Maximum absolute deflection ${model.maximumDeflection.value.toFixed(3)} inches at ${formatPosition(deflectionSample.position)}.`);
+      deflectionChart.innerHTML = `
         ${buildChartFrame(model)}
-        <line x1="${model.beamStart}" y1="${model.baseline}" x2="${model.beamEnd}" y2="${model.baseline}"
-          stroke="#8c78b4" stroke-width="2" stroke-dasharray="5 5"/>
-        <text x="${(model.beamStart + model.beamEnd) / 2}" y="${model.baseline - 8}" text-anchor="middle"
-          fill="#71628f" font-size="10">Deflection is added in Stage 4</text>`;
+        <line x1="${model.beamStart}" y1="${model.deflectionBaseline}" x2="${model.beamEnd}" y2="${model.deflectionBaseline}"
+          stroke="#cfd9d6" stroke-width="1" stroke-dasharray="4 4"/>
+        <path d="${buildLinePath(model.deflectionSamples)}" fill="none" stroke="#8c78b4" stroke-width="2.4"
+          stroke-linecap="round" stroke-linejoin="round"/>
+        ${buildPeakMarkup(deflectionSample, "in", "#71628f", model.plotTop, model.plotBottom)}`;
+      document.getElementById("deflection-maximum").innerHTML =
+        `Max |δ| <strong>${model.maximumDeflection.value.toFixed(3)} in</strong> <span>at ${formatPosition(deflectionSample.position)}</span>`;
     }
 
     function escapeSvgText(value) {
@@ -1819,18 +2155,28 @@
     function renderBeamDrawing(model, reactions) {
       const svg = document.getElementById("beam-drawing");
       const beamY = 92;
-      const supportMarkup = model.support === "simple"
-        ? `
-          <path d="M${model.beamStart - 12} 99 ${model.beamStart} 116 ${model.beamStart + 12} 99Z" fill="#dbe8e4" stroke="#76918a" stroke-width="1.2"/>
-          <line x1="${model.beamStart - 13}" y1="119" x2="${model.beamStart + 13}" y2="119" stroke="#a5b7b2" stroke-width="1.2"/>
-          <path d="M${model.beamEnd - 12} 99 ${model.beamEnd} 113 ${model.beamEnd + 12} 99Z" fill="#dbe8e4" stroke="#76918a" stroke-width="1.2"/>
-          <circle cx="${model.beamEnd - 6}" cy="117" r="3" fill="#fff" stroke="#76918a" stroke-width="1.2"/>
-          <circle cx="${model.beamEnd + 6}" cy="117" r="3" fill="#fff" stroke="#76918a" stroke-width="1.2"/>
-          <line x1="${model.beamEnd - 17}" y1="122" x2="${model.beamEnd + 17}" y2="122" stroke="#a5b7b2" stroke-width="1.2"/>
-          <line x1="${model.beamStart}" y1="146" x2="${model.beamStart}" y2="124" stroke="#157b72" stroke-width="2" marker-end="url(#arrow-up)"/>
-          <line x1="${model.beamEnd}" y1="146" x2="${model.beamEnd}" y2="124" stroke="#157b72" stroke-width="2" marker-end="url(#arrow-up)"/>
-          <text x="${model.beamStart}" y="143" text-anchor="middle" fill="#157b72" font-size="9" font-weight="700">R1 = ${reactions.left.toFixed(2)} k</text>
-          <text x="${model.beamEnd}" y="143" text-anchor="middle" fill="#157b72" font-size="9" font-weight="700">R2 = ${reactions.right.toFixed(2)} k</text>`
+      const supportMarkup = model.support === "simple" || model.support === "overhang"
+        ? (() => {
+          const firstX = model.leftSupportX;
+          const secondX = model.rightSupportX;
+          const secondSupport = model.support === "overhang"
+            ? `<path d="M${secondX - 12} 99 ${secondX} 116 ${secondX + 12} 99Z" fill="#dbe8e4" stroke="#76918a" stroke-width="1.2"/>
+              <circle cx="${secondX - 6}" cy="119" r="3" fill="#fff" stroke="#76918a" stroke-width="1.2"/>
+              <circle cx="${secondX + 6}" cy="119" r="3" fill="#fff" stroke="#76918a" stroke-width="1.2"/>
+              <line x1="${secondX - 17}" y1="124" x2="${secondX + 17}" y2="124" stroke="#a5b7b2" stroke-width="1.2"/>`
+            : `<path d="M${secondX - 12} 99 ${secondX} 113 ${secondX + 12} 99Z" fill="#dbe8e4" stroke="#76918a" stroke-width="1.2"/>
+              <circle cx="${secondX - 6}" cy="117" r="3" fill="#fff" stroke="#76918a" stroke-width="1.2"/>
+              <circle cx="${secondX + 6}" cy="117" r="3" fill="#fff" stroke="#76918a" stroke-width="1.2"/>
+              <line x1="${secondX - 17}" y1="122" x2="${secondX + 17}" y2="122" stroke="#a5b7b2" stroke-width="1.2"/>`;
+          const firstSupport = `<path d="M${firstX - 12} 99 ${firstX} 116 ${firstX + 12} 99Z" fill="#dbe8e4" stroke="#76918a" stroke-width="1.2"/>
+            <line x1="${firstX - 13}" y1="119" x2="${firstX + 13}" y2="119" stroke="#a5b7b2" stroke-width="1.2"/>`;
+          const reaction = (x, value, label) => `
+            <line x1="${x}" y1="${value < 0 ? 124 : 146}" x2="${x}" y2="${value < 0 ? 146 : 124}"
+              stroke="#157b72" stroke-width="2" marker-end="url(#${value < 0 ? "arrow-down" : "arrow-up"})"/>
+            <text x="${x}" y="143" text-anchor="middle" fill="#157b72" font-size="9" font-weight="700">${label} = ${value.toFixed(2)} k</text>`;
+          return `${firstSupport}${secondSupport}
+            ${reaction(firstX, reactions.left, "R1")}${reaction(secondX, reactions.right, "R2")}`;
+        })()
         : `
           <rect x="${model.beamStart - 18}" y="61" width="18" height="66" fill="#e7ecea" stroke="#879a95" stroke-width="1.2"/>
           <g stroke="#a9b8b4" stroke-width="1">
@@ -1844,9 +2190,11 @@
           <path d="M${model.beamStart + 42} 126a14 14 0 1 1 13-16" fill="none" stroke="#157b72" stroke-width="1.5" marker-end="url(#arrow-up)"/>
           <text x="${model.beamStart + 70}" y="131" fill="#157b72" font-size="9" font-weight="700">M0 = ${reactions.fixedMoment.toFixed(2)} kip-ft</text>`;
 
-      const loadMarkup = model.loads.map((load, index) => {
-        const labelY = 20 + Math.min(index, 3) * 12;
-        const label = index < 4
+      const drawingLoads = model.selfWeight ? [...model.loads, model.selfWeight] : model.loads;
+      const loadMarkup = drawingLoads.map((load, index) => {
+        const isSelfWeight = load === model.selfWeight;
+        const labelY = 20 + Math.min(isSelfWeight ? model.loads.length : index, 4) * 12;
+        const label = isSelfWeight || index < 4
           ? `<text x="${(model.beamStart + model.beamEnd) / 2}" y="${labelY}" text-anchor="middle" fill="${load.color}" font-size="10" font-weight="650">${escapeSvgText(load.label)}</text>`
           : "";
 
@@ -1868,13 +2216,22 @@
         <line x1="${tick.x}" y1="154" x2="${tick.x}" y2="161" stroke="#a4b1ae" stroke-width="1"/>
         <text x="${tick.x}" y="176" text-anchor="middle" fill="#83908d" font-size="9">${tick.position.toFixed(2).replace(/\.00$/, "")} ft</text>
       `).join("");
-      const noLoads = model.loads.length === 0
+      const dimensions = model.support === "overhang"
+        ? `
+          <line x1="${model.beamStart}" y1="184" x2="${model.leftSupportX}" y2="184" stroke="#b8c5c1" stroke-width="1"/>
+          <line x1="${model.leftSupportX}" y1="184" x2="${model.rightSupportX}" y2="184" stroke="#b8c5c1" stroke-width="1"/>
+          <line x1="${model.rightSupportX}" y1="184" x2="${model.beamEnd}" y2="184" stroke="#b8c5c1" stroke-width="1"/>
+          <text x="${(model.beamStart + model.leftSupportX) / 2}" y="198" text-anchor="middle" fill="#687875" font-size="9">Overhang ${model.leftOverhang.toFixed(2)} ft</text>
+          <text x="${(model.leftSupportX + model.rightSupportX) / 2}" y="198" text-anchor="middle" fill="#687875" font-size="9">Support span ${model.span.toFixed(2)} ft</text>
+          <text x="${(model.rightSupportX + model.beamEnd) / 2}" y="198" text-anchor="middle" fill="#687875" font-size="9">Overhang ${model.rightOverhang.toFixed(2)} ft</text>`
+        : `<text x="${(model.beamStart + model.beamEnd) / 2}" y="196" text-anchor="middle" fill="#687875" font-size="9">Span ${model.span.toFixed(2)} ft</text>`;
+      const noLoads = drawingLoads.length === 0
         ? `<text x="${(model.beamStart + model.beamEnd) / 2}" y="54" text-anchor="middle" fill="#84918e" font-size="10">No applied load rows</text>`
         : "";
 
       svg.innerHTML = `
-        <title id="beam-title">${escapeSvgText(model.support === "simple" ? "Simply supported beam" : "Cantilever beam")} preview</title>
-        <desc id="beam-desc">${escapeSvgText(`${model.span} ft ${model.support === "simple" ? "simply supported" : "cantilever"} beam, ${model.section}, with ${model.loads.length} applied load rows. ${model.support === "simple" ? `Calculated reactions are ${reactions.left.toFixed(2)} and ${reactions.right.toFixed(2)} kips.` : `Calculated fixed reaction is ${reactions.left.toFixed(2)} kips and fixed-end moment is ${reactions.fixedMoment.toFixed(2)} kip-feet.`}`)}</desc>
+        <title id="beam-title">${escapeSvgText(model.support === "simple" ? "Simply supported beam" : model.support === "overhang" ? "Overhanging beam" : "Cantilever beam")} preview</title>
+        <desc id="beam-desc">${escapeSvgText(`${model.beamLength} ft ${model.support === "overhang" ? `overhanging beam with ${model.span} ft support span` : model.support === "simple" ? "simply supported" : "cantilever"} beam, ${model.section}, with ${model.loads.length} applied load rows. ${model.selfWeight ? "Self-weight is included. " : ""}${model.support === "simple" || model.support === "overhang" ? `Calculated support reactions are ${reactions.left.toFixed(2)} and ${reactions.right.toFixed(2)} kips.` : `Calculated fixed reaction is ${reactions.left.toFixed(2)} kips and fixed-end moment is ${reactions.fixedMoment.toFixed(2)} kip-feet.`}`)}</desc>
         <defs>
           <marker id="arrow-down" markerWidth="7" markerHeight="7" refX="3.5" refY="6" orient="auto" markerUnits="strokeWidth">
             <path d="M0 0 3.5 6 7 0" fill="#477b9a"/>
@@ -1888,12 +2245,14 @@
         <line x1="${model.beamStart}" y1="${beamY}" x2="${model.beamEnd}" y2="${beamY}" stroke="#263b37" stroke-width="6" stroke-linecap="round"/>
         ${supportMarkup}
         <line x1="${model.beamStart}" y1="154" x2="${model.beamEnd}" y2="154" stroke="#d7e0dd" stroke-width="1"/>
-        ${ticks}`;
+        ${ticks}
+        ${dimensions}`;
 
       document.getElementById("beam-summary").textContent =
-        `${model.support === "simple" ? "Simply supported" : "Cantilever"} · ${model.section} · ${model.span} ft span`;
+        `${model.support === "simple" ? "Simply supported" : model.support === "overhang" ? "Overhanging" : "Cantilever"} · ${model.section} · ${model.span} ft ${model.support === "overhang" ? "support span" : "span"}`;
       document.getElementById("beam-caption").innerHTML = `
         <span class="legend-item"><span class="legend-mark"></span>Applied loads · downward</span>
+        ${model.selfWeight ? '<span class="legend-item">Self-weight · downward</span>' : ""}
         <span class="legend-item"><span class="legend-mark reaction"></span>Calculated reactions</span>
         <span>${model.loads.length} applied ${model.loads.length === 1 ? "load row" : "load rows"}</span>`;
     }
@@ -1904,50 +2263,146 @@
       validationStatus.classList.toggle("success", state === "success");
     }
 
+    function renderDesignCheck(prefix, actual, allowable, units, passed, digits) {
+      const percent = allowable > 0 ? actual / allowable * 100 : 0;
+      const status = document.getElementById(`${prefix}-status`);
+      status.textContent = passed ? "PASS" : "FAIL";
+      status.classList.toggle("fail", !passed);
+
+      const actualElement = document.getElementById(
+        prefix === "bending" ? "bending-stress" : "maximum-deflection"
+      );
+      actualElement.innerHTML = `${actual.toFixed(digits)} <small>${units}</small>`;
+      document.getElementById(`${prefix}-allowable`).textContent =
+        `${allowable.toFixed(digits)} ${units}`;
+      document.getElementById(`${prefix}-utilization`).textContent = `${percent.toFixed(1)}%`;
+
+      const progress = document.getElementById(`${prefix}-progress`);
+      progress.setAttribute("aria-valuenow", String(Math.min(100, percent).toFixed(1)));
+      progress.setAttribute("aria-valuetext", `${percent.toFixed(1)}% utilization`);
+      progress.querySelector(".ratio-fill").style.setProperty("--utilization", `${Math.min(100, percent)}%`);
+      progress.querySelector(".ratio-fill").classList.toggle("pass", passed);
+      progress.querySelector(".ratio-fill").classList.toggle("fail", !passed);
+    }
+
+    function renderDesignChecks(result) {
+      renderDesignCheck(
+        "bending",
+        result.bendingStress,
+        result.section.Fb,
+        "ksi",
+        result.bendingPass,
+        3
+      );
+      renderDesignCheck(
+        "deflection",
+        result.deflection.maximum.value,
+        result.deflection.allowable,
+        "in",
+        result.deflectionPass,
+        3
+      );
+    }
+
+    function describeSection(section, material) {
+      return material === "steel"
+        ? section.name
+        : `${section.size} · ${section.species} · ${section.grade}`;
+    }
+
+    function renderRecommendation(result, material) {
+      const title = document.getElementById("recommendation-title");
+      const summary = document.getElementById("recommendation-summary");
+      const button = document.getElementById("use-recommendation");
+      currentRecommendation = result;
+      button.disabled = !result;
+
+      if (!result) {
+        title.textContent = "No passing section in sample catalog";
+        summary.textContent = "Try reducing the load or span, or review the beam assumptions.";
+        return;
+      }
+
+      title.textContent = "Lightest passing section";
+      summary.textContent =
+        `${describeSection(result.section, material)} · ${result.section.weight.toFixed(2)} lb/ft`;
+    }
+
+    function useRecommendation() {
+      if (!currentRecommendation) return;
+      const section = currentRecommendation.section;
+      if (document.getElementById("material").value === "steel") {
+        document.getElementById("steel-section").value = section.name;
+      } else {
+        document.getElementById("lumber-size").value = section.size;
+        document.getElementById("lumber-species").value = section.species;
+        document.getElementById("lumber-grade").value = section.grade;
+      }
+      refreshBeamPreview("Recommended section selected; analysis updated.");
+    }
+
     function updateCatalogVisibility() {
       const isSteel = document.getElementById("material").value === "steel";
       steelField.hidden = !isSteel;
       lumberFields.hidden = isSteel;
     }
 
+    function updateSupportVisibility() {
+      const isOverhang = document.getElementById("support").value === "overhang";
+      document.getElementById("overhang-fields").hidden = !isOverhang;
+      document.getElementById("span-label").textContent = isOverhang ? "Support span" : "Span";
+    }
+
     function refreshBeamPreview(message) {
       const state = readDesignInputs();
       const errors = validateDesignInputs(state);
       renderValidationErrors(errors);
-      updatePositionLimits(state.span);
+      updatePositionLimits(state);
 
       if (errors.length > 0) {
+        currentRecommendation = null;
+        document.getElementById("use-recommendation").disabled = true;
         setValidationStatus(`The analysis is not current. Fix the highlighted input${errors.length === 1 ? "" : "s"} to update it.`, "error");
         return;
       }
 
-      lastValidSpan = state.span;
-      const beamModel = computeBeamDrawingModel(state);
-      const analysis = computeBeamAnalysis(state);
-      const diagramModel = computeResponseDiagramModel(analysis, beamModel);
-      renderBeamDrawing(beamModel, analysis.reactions);
+      lastValidBeamLength = getBeamLength(state);
+      const section = findSelectedSection(state);
+      const result = calculateSectionResult(state, section);
+      const beamModel = computeBeamDrawingModel(state, section);
+      const diagramModel = computeResponseDiagramModel(result.analysis, beamModel, result.deflection);
+      const recommendation = recommendSection(state);
+      renderBeamDrawing(beamModel, result.analysis.reactions);
       renderResponseDiagrams(diagramModel);
-      setValidationStatus(message || "Reactions, shear, and moment updated. Self-weight is excluded.", "success");
+      renderDesignChecks(result);
+      renderRecommendation(recommendation, state.material);
+      setValidationStatus(message || `Analysis updated. Self-weight is ${state.includeSelfWeight ? "included" : "excluded"}.`, "success");
     }
 
     function handleSpanCommit() {
       const state = readDesignInputs();
       const validSpan = Number.isFinite(state.span) && state.span >= 0.1 && state.span <= 100;
-      if (!validSpan) {
+      const beamLength = getBeamLength(state);
+      const validGeometry = validSpan && Number.isFinite(beamLength) &&
+        beamLength >= 0.1 && beamLength <= 100 &&
+        (state.support !== "overhang" ||
+          ((state.leftOverhang > 0 || state.rightOverhang > 0) &&
+            state.leftOverhang >= 0 && state.rightOverhang >= 0));
+      if (!validGeometry) {
         refreshBeamPreview();
         return;
       }
 
-      const adjusted = clampLoadPositionsToSpan(state);
+      const adjusted = clampLoadPositionsToBeam(state, beamLength);
       if (adjusted) {
-        renderLoadRows(state.loads.map(({ fields, ...load }) => load), state.span);
+        renderLoadRows(state.loads.map(({ fields, ...load }) => load), beamLength);
       }
-      refreshBeamPreview(adjusted ? "Load positions outside the resized span were clamped; review uniform-load ranges." : undefined);
+      refreshBeamPreview(adjusted ? "Load positions outside the resized beam were clamped; review uniform-load ranges." : undefined);
     }
 
-    function clampLoadPositionsToSpan(state) {
+    function clampLoadPositionsToBeam(state, beamLength) {
       let adjusted = false;
-      const clamp = (value) => Math.min(state.span, Math.max(0, value));
+      const clamp = (value) => Math.min(beamLength, Math.max(0, value));
 
       state.loads.forEach((load) => {
         const values = load.type === "point"
@@ -1974,12 +2429,10 @@
         return;
       }
 
-      const defaultSpan = Number.isFinite(state.span) && state.span >= 0.1 && state.span <= 100
-        ? state.span
-        : lastValidSpan;
+      const beamLength = getLoadRowLength(state);
       const loads = state.loads.map(({ fields, ...load }) => load);
-      loads.push(createLoad(type, defaultSpan, nextLoadId++));
-      renderLoadRows(loads, defaultSpan);
+      loads.push(createLoad(type, beamLength, nextLoadId++));
+      renderLoadRows(loads, beamLength);
       refreshBeamPreview();
     }
 
@@ -1988,10 +2441,7 @@
       const loads = state.loads
         .filter((load) => load.id !== id)
         .map(({ fields, ...load }) => load);
-      const span = Number.isFinite(state.span) && state.span >= 0.1 && state.span <= 100
-        ? state.span
-        : lastValidSpan;
-      renderLoadRows(loads, span);
+      renderLoadRows(loads, getLoadRowLength(state));
       refreshBeamPreview();
     }
 
@@ -1999,28 +2449,36 @@
       const state = readDesignInputs();
       const loads = state.loads.map(({ fields, ...load }) => {
         if (load.id !== id) return load;
-        const span = Number.isFinite(state.span) && state.span >= 0.1 && state.span <= 100
-          ? state.span
-          : lastValidSpan;
-        return createLoad(type, span, id);
+        return createLoad(type, getLoadRowLength(state), id);
       });
-      renderLoadRows(loads, Number.isFinite(state.span) && state.span >= 0.1 ? state.span : lastValidSpan);
+      renderLoadRows(loads, getLoadRowLength(state));
       refreshBeamPreview();
     }
 
     let initialLoads = [{ id: 1, type: "uniform", magnitude: 1, start: 0, end: 20 }];
     renderLoadRows(initialLoads, 20);
     updateCatalogVisibility();
+    updateSupportVisibility();
     refreshBeamPreview();
 
     form.addEventListener("input", () => refreshBeamPreview());
     document.getElementById("span").addEventListener("change", handleSpanCommit);
     document.getElementById("span").addEventListener("blur", handleSpanCommit);
+    document.getElementById("left-overhang").addEventListener("change", handleSpanCommit);
+    document.getElementById("left-overhang").addEventListener("blur", handleSpanCommit);
+    document.getElementById("right-overhang").addEventListener("change", handleSpanCommit);
+    document.getElementById("right-overhang").addEventListener("blur", handleSpanCommit);
 
     form.addEventListener("change", (event) => {
       const target = event.target;
       if (target.id === "material") {
         updateCatalogVisibility();
+        refreshBeamPreview();
+        return;
+      }
+
+      if (target.id === "support") {
+        updateSupportVisibility();
         refreshBeamPreview();
         return;
       }
@@ -2044,6 +2502,8 @@
         removeLoadRow(Number(row.dataset.loadId));
       }
     });
+
+    document.getElementById("use-recommendation").addEventListener("click", useRecommendation);
   </script>
 </body>
 </html>
