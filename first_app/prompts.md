@@ -28,3 +28,15 @@
 - Asked: "commit to this"
   Changed: Committed the current spec and prompt-log changes only.
   Worked: Yes.
+- Asked: "[[PLAN]] Read spec.md. Don't write any code. Suggest how to build this app in 4 to 6 stages, starting with a mockup of the page layout with no real calculations. Each stage should be small enough that I can test it before moving on. For each stage, tell me what I should check when it's done."
+  Changed: Prepared a five-stage, browser-only build proposal with checks for each stage and specification issues to resolve before calculations. Did not write code.
+  Worked: Yes.
+- Asked: "add the stages to the end of `spec.md` under `## Build stages`."
+  Changed: Added the five staged build steps and their checks at the end of spec.md.
+  Worked: Yes.
+- Asked: "Build stage 1 from the Build stages section of spec.md: a mockup of the app as a single file named index.html. Use plain HTML, CSS, and JavaScript with no build tools. You may load libraries from a CDN. Show every input, output, and plot from the spec, filled with realistic placeholder values. Don't write any calculations yet."
+  Changed: Replaced index.html with a responsive single-file static mockup covering the specified inputs, beam view, diagrams, checks, and recommendation. No calculations or external libraries were added.
+  Worked: Yes. Browser preview rendered at desktop and mobile widths without horizontal overflow.
+- Asked: "commit this"
+  Changed: Committed the Stage 1 mockup, Build stages spec addition, and prompt-log updates.
+  Worked: Yes.

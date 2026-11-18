@@ -78,3 +78,19 @@ The built-in beam catalog supplies section modulus, elastic modulus, allowable b
 - Self-weight, shear stress, lateral-torsional buckling, load
   combinations, and continuous beams.
 - Saving designs.
+
+## Build stages
+
+1. **Static page mockup — no calculations.** Lay out the input panel, beam drawing, three diagram areas, check cards, and sizing suggestion with clearly marked placeholder values.
+   - **Check:** Open at desktop and phone widths. Confirm everything is readable, stacks appropriately, and placeholders are clearly distinguished from calculated results.
+2. **Inputs and beam/load drawing.** Add validated inputs, load-row controls, and a drawing that reflects current inputs. Keep calculation results as placeholders.
+   - **Check:** Test input limits and invalid values, add/remove rows, change span and support type, and confirm the drawing updates.
+   - **Before this stage:** Resolve the conflict between self-weight being enabled by default in Inputs and listed as out of scope.
+3. **Reactions, shear, and moment.** Calculate statics and draw shear and moment diagrams.
+   - **Check:** Compare against hand calculations for a full-span uniform load, an off-center point load, and a cantilever end load. Verify peaks and point-load jumps are not missed by the plotting grid.
+4. **Deflection and design checks.** Calculate deflection and bending stress, then show the pass/fail checks.
+   - **Check:** Compare values and locations against hand calculations; test just below, at, and above each limit.
+   - **Before this stage:** Define whether the deflection limit is L/240 or L/360, add Ix to the beam catalog, and settle the unit conventions.
+5. **Lightest-section recommendation and final validation.** Search the catalog, show a passing recommendation, and make “use it” update the selected beam.
+   - **Check:** Compare recommendations against hand-ranked candidates, including ties and no passing section; then run the validation cases and recheck the responsive layout.
+   - **Before this stage:** Define catalog ranking and reconcile validation cases with the final self-weight rule.

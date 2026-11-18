@@ -3,8 +3,1375 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>App</title>
+  <meta name="theme-color" content="#f3f6f5">
+  <title>Beam Designer — Static Preview</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #1d2b2a;
+      --muted: #6a7977;
+      --line: #e2e9e7;
+      --paper: #fff;
+      --canvas: #f3f6f5;
+      --teal: #157b72;
+      --teal-dark: #11665f;
+      --teal-pale: #e8f4f1;
+      --blue: #477b9a;
+      --blue-pale: #e5eff5;
+      --amber: #a36316;
+      --amber-pale: #fff3dc;
+      --red: #b05d45;
+      --red-pale: #f8e9e4;
+      --shadow: 0 14px 36px rgba(37, 61, 58, 0.06), 0 2px 6px rgba(37, 61, 58, 0.035);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-synthesis: none;
+      text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--canvas);
+      color: var(--ink);
+      font-size: 14px;
+      line-height: 1.45;
+    }
+
+    button, input, select { font: inherit; }
+    button, select, input { color: inherit; }
+
+    .topbar {
+      min-height: 70px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      padding: 0 clamp(20px, 4vw, 56px);
+      background: var(--paper);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .brand-mark {
+      width: 36px;
+      height: 36px;
+      display: grid;
+      place-items: center;
+      border-radius: 11px;
+      color: white;
+      background: var(--teal);
+    }
+
+    .brand-name {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 720;
+      letter-spacing: -0.025em;
+    }
+
+    .brand-subtitle {
+      margin: 1px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .preview-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 7px 10px;
+      border: 1px solid #f0dfbb;
+      border-radius: 999px;
+      color: #825416;
+      background: #fff9eb;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.055em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .preview-badge::before {
+      width: 7px;
+      height: 7px;
+      content: "";
+      border-radius: 50%;
+      background: #d69a36;
+    }
+
+    main {
+      width: min(1512px, 100%);
+      margin: 0 auto;
+      padding: 28px clamp(16px, 3vw, 42px) 48px;
+    }
+
+    .page-intro {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 20px;
+      margin: 0 0 20px;
+    }
+
+    .eyebrow {
+      margin: 0 0 6px;
+      color: var(--teal);
+      font-size: 11px;
+      font-weight: 750;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(25px, 3vw, 34px);
+      line-height: 1.1;
+      letter-spacing: -0.045em;
+    }
+
+    .intro-copy {
+      max-width: 590px;
+      margin: 9px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .example-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 3px;
+      padding: 9px 12px;
+      border: 1px solid #d5e7e2;
+      border-radius: 10px;
+      color: var(--teal-dark);
+      background: #f8fcfb;
+      font-size: 12px;
+      font-weight: 650;
+      white-space: nowrap;
+    }
+
+    .example-pill svg { flex: 0 0 auto; }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(285px, 340px) minmax(0, 1fr);
+      align-items: start;
+      gap: 20px;
+    }
+
+    .panel {
+      min-width: 0;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: var(--paper);
+      box-shadow: var(--shadow);
+    }
+
+    .panel-heading {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 17px 19px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .panel-heading h2 {
+      margin: 0;
+      font-size: 14px;
+      font-weight: 720;
+      letter-spacing: -0.015em;
+    }
+
+    .panel-heading p {
+      margin: 3px 0 0;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .panel-body { padding: 18px; }
+
+    .section-label {
+      margin: 0 0 12px;
+      color: #85918f;
+      font-size: 10px;
+      font-weight: 750;
+      letter-spacing: 0.105em;
+      text-transform: uppercase;
+    }
+
+    .form-section + .form-section {
+      margin-top: 21px;
+      padding-top: 19px;
+      border-top: 1px solid #edf1f0;
+    }
+
+    .field-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .field-grid.one { grid-template-columns: 1fr; }
+    .field { min-width: 0; }
+
+    .field label, .field-label {
+      display: block;
+      margin-bottom: 6px;
+      color: #465653;
+      font-size: 11px;
+      font-weight: 650;
+    }
+
+    .control {
+      width: 100%;
+      min-height: 38px;
+      padding: 8px 10px;
+      border: 1px solid #dce5e2;
+      border-radius: 8px;
+      outline: none;
+      background: white;
+      font-size: 12px;
+    }
+
+    .control:focus-visible, button:focus-visible {
+      outline: 3px solid rgba(21, 123, 114, 0.24);
+      outline-offset: 2px;
+    }
+
+    select.control { padding-right: 28px; }
+
+    .input-unit {
+      position: relative;
+    }
+
+    .input-unit .control { padding-right: 50px; }
+
+    .input-unit span {
+      position: absolute;
+      top: 50%;
+      right: 10px;
+      color: #82908d;
+      font-size: 11px;
+      pointer-events: none;
+      transform: translateY(-50%);
+    }
+
+    .radio-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .radio-option {
+      min-height: 39px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 9px;
+      border: 1px solid #dce5e2;
+      border-radius: 8px;
+      color: #53625f;
+      font-size: 11px;
+      cursor: default;
+    }
+
+    .radio-option.selected {
+      border-color: #9dcac1;
+      color: var(--teal-dark);
+      background: #f1f9f7;
+      font-weight: 700;
+    }
+
+    .radio-option input, .check-control input {
+      accent-color: var(--teal);
+    }
+
+    .lumber-preview {
+      margin-top: 12px;
+      padding: 11px;
+      border: 1px dashed #d9e3e0;
+      border-radius: 10px;
+      background: #fafcfb;
+    }
+
+    .lumber-preview-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .lumber-preview-head span:first-child {
+      color: #667571;
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    .alt-tag {
+      color: #8a9693;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .lumber-preview .field label { color: #7d8986; }
+    .lumber-preview .control:disabled {
+      color: #71807c;
+      background: #f3f6f5;
+      opacity: 1;
+    }
+
+    .load-row {
+      margin-top: 10px;
+      padding: 11px;
+      border: 1px solid #e4ebe9;
+      border-radius: 10px;
+      background: #fcfdfd;
+    }
+
+    .load-row-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .load-row-name {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      color: #3a4b47;
+      font-size: 11px;
+      font-weight: 720;
+    }
+
+    .load-icon {
+      width: 21px;
+      height: 21px;
+      display: grid;
+      place-items: center;
+      border-radius: 6px;
+      color: var(--blue);
+      background: var(--blue-pale);
+    }
+
+    .load-icon.point {
+      color: #91611e;
+      background: #fff2dd;
+    }
+
+    .text-button {
+      padding: 3px 5px;
+      border: 0;
+      color: #8a9693;
+      background: transparent;
+      font-size: 10px;
+      cursor: default;
+    }
+
+    .load-fields {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 9px;
+    }
+
+    .load-fields .field label { font-size: 10px; }
+    .load-fields .control { min-height: 35px; padding: 7px 8px; }
+    .load-fields .input-unit .control { padding-right: 42px; }
+    .load-fields .input-unit span { right: 8px; font-size: 10px; }
+
+    .helper {
+      margin: 9px 0 0;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.45;
+    }
+
+    .add-load {
+      width: 100%;
+      min-height: 37px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      margin-top: 10px;
+      border: 1px dashed #bfd5d0;
+      border-radius: 9px;
+      color: var(--teal-dark);
+      background: #f8fcfb;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: default;
+    }
+
+    .check-control {
+      display: flex;
+      align-items: flex-start;
+      gap: 9px;
+      padding: 11px;
+      border: 1px solid #dce9e5;
+      border-radius: 10px;
+      background: #f8fcfb;
+      cursor: default;
+    }
+
+    .check-control input { margin: 2px 0 0; }
+
+    .check-control strong {
+      display: block;
+      color: #354743;
+      font-size: 11px;
+    }
+
+    .check-control small {
+      display: block;
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 10px;
+    }
+
+    .mockup-note {
+      display: flex;
+      gap: 8px;
+      margin-top: 17px;
+      padding: 10px;
+      border: 1px solid #f0e2c4;
+      border-radius: 9px;
+      color: #765827;
+      background: #fffbf2;
+      font-size: 10px;
+      line-height: 1.45;
+    }
+
+    .mockup-note svg { flex: 0 0 auto; margin-top: 1px; }
+
+    .results-column {
+      display: grid;
+      gap: 17px;
+      min-width: 0;
+    }
+
+    .beam-card {
+      padding: 15px 19px 13px;
+    }
+
+    .beam-card-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 7px;
+    }
+
+    .beam-card h2 {
+      margin: 0;
+      font-size: 14px;
+      font-weight: 720;
+    }
+
+    .beam-card-subtitle {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .static-chip {
+      padding: 5px 8px;
+      border-radius: 7px;
+      color: #7e621e;
+      background: #fff5df;
+      font-size: 9px;
+      font-weight: 750;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .beam-svg {
+      display: block;
+      width: 100%;
+      height: auto;
+      margin-top: 3px;
+    }
+
+    .beam-caption {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px 17px;
+      padding-top: 9px;
+      border-top: 1px solid #edf1f0;
+      color: #60706c;
+      font-size: 10px;
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .legend-mark {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--blue);
+    }
+
+    .legend-mark.reaction { background: var(--teal); }
+    .legend-mark.point { background: #c28b37; }
+
+    .diagrams-card { padding: 0 18px 15px; }
+
+    .diagram-heading {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 16px 1px 12px;
+    }
+
+    .diagram-heading h2 {
+      margin: 0;
+      font-size: 14px;
+      font-weight: 720;
+    }
+
+    .diagram-heading p {
+      margin: 3px 0 0;
+      color: var(--muted);
+      font-size: 10px;
+    }
+
+    .cursor-sample {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 8px;
+      border: 1px solid #dbe8e4;
+      border-radius: 7px;
+      color: #4a6962;
+      background: #f8fcfb;
+      font-size: 10px;
+      white-space: nowrap;
+    }
+
+    .cursor-sample strong { color: var(--teal-dark); }
+
+    .chart {
+      position: relative;
+      padding: 12px 0 8px;
+      border-top: 1px solid #edf1f0;
+    }
+
+    .chart-topline {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 0 3px 7px;
+    }
+
+    .chart-title {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      color: #334541;
+      font-size: 11px;
+      font-weight: 750;
+    }
+
+    .chart-title .swatch {
+      width: 8px;
+      height: 8px;
+      border-radius: 2px;
+      background: var(--blue);
+    }
+
+    .chart-title .swatch.moment { background: var(--teal); }
+    .chart-title .swatch.deflection { background: #8c78b4; }
+
+    .chart-maximum {
+      color: #6b7976;
+      font-size: 10px;
+    }
+
+    .chart-maximum strong {
+      color: var(--ink);
+      font-size: 11px;
+      font-weight: 750;
+    }
+
+    .chart-svg {
+      display: block;
+      width: 100%;
+      height: auto;
+      overflow: visible;
+    }
+
+    .chart-xaxis {
+      display: flex;
+      justify-content: space-between;
+      margin: -1px 5px 0 8.2%;
+      color: #83908d;
+      font-size: 9px;
+    }
+
+    .hover-readout {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 7px 15px;
+      margin: 11px 1px 0;
+      padding: 9px 11px;
+      border: 1px solid #dceae6;
+      border-radius: 9px;
+      color: #56716b;
+      background: #f6fbf9;
+      font-size: 10px;
+    }
+
+    .hover-readout strong {
+      color: var(--teal-dark);
+      font-weight: 750;
+    }
+
+    .checks-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+    }
+
+    .check-card {
+      padding: 16px 17px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: var(--paper);
+      box-shadow: var(--shadow);
+    }
+
+    .check-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 9px;
+    }
+
+    .check-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+
+    .check-icon {
+      width: 29px;
+      height: 29px;
+      display: grid;
+      place-items: center;
+      border-radius: 9px;
+      color: var(--blue);
+      background: var(--blue-pale);
+    }
+
+    .check-icon.deflection {
+      color: #74619d;
+      background: #f0ecf7;
+    }
+
+    .check-title {
+      margin: 0;
+      font-size: 12px;
+      font-weight: 740;
+    }
+
+    .check-subtitle {
+      margin: 2px 0 0;
+      color: var(--muted);
+      font-size: 9px;
+    }
+
+    .pass-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 8px;
+      border-radius: 999px;
+      color: #24745b;
+      background: #e9f6ef;
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+    }
+
+    .pass-badge::before {
+      width: 6px;
+      height: 6px;
+      content: "";
+      border-radius: 50%;
+      background: #38956f;
+    }
+
+    .check-values {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 10px;
+      margin: 16px 0 9px;
+    }
+
+    .actual-value {
+      color: var(--ink);
+      font-size: 23px;
+      font-weight: 740;
+      letter-spacing: -0.045em;
+    }
+
+    .actual-value small {
+      color: #6e7c79;
+      font-size: 11px;
+      font-weight: 550;
+      letter-spacing: 0;
+    }
+
+    .allowable-value {
+      color: #74817e;
+      font-size: 10px;
+      text-align: right;
+    }
+
+    .allowable-value strong {
+      display: block;
+      margin-top: 2px;
+      color: #455550;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .ratio-track {
+      height: 7px;
+      overflow: hidden;
+      border-radius: 99px;
+      background: #e9eeec;
+    }
+
+    .ratio-fill {
+      height: 100%;
+      border-radius: inherit;
+      background: #d7a043;
+    }
+
+    .ratio-fill.bending { width: 75%; }
+    .ratio-fill.deflection { width: 91%; }
+
+    .ratio-key {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 6px;
+      color: #899491;
+      font-size: 9px;
+    }
+
+    .ratio-value {
+      margin-top: 11px;
+      color: #7a6743;
+      font-size: 10px;
+    }
+
+    .ratio-value strong { color: #9a6b22; }
+
+    .recommendation {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 17px 19px;
+      border: 1px solid #cfe3dd;
+      border-radius: 14px;
+      background: linear-gradient(110deg, #f1f9f6 0%, #fbfdfc 78%);
+      box-shadow: var(--shadow);
+    }
+
+    .recommendation-main {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .recommendation-icon {
+      width: 38px;
+      height: 38px;
+      display: grid;
+      flex: 0 0 auto;
+      place-items: center;
+      border-radius: 11px;
+      color: var(--teal-dark);
+      background: #dcefe9;
+    }
+
+    .recommendation h2 {
+      margin: 0;
+      font-size: 12px;
+      font-weight: 740;
+    }
+
+    .recommendation p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 10px;
+    }
+
+    .recommendation p strong { color: #3b504a; }
+
+    .primary-button {
+      min-height: 37px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      flex: 0 0 auto;
+      padding: 8px 12px;
+      border: 1px solid var(--teal);
+      border-radius: 8px;
+      color: white;
+      background: var(--teal);
+      font-size: 10px;
+      font-weight: 700;
+      cursor: default;
+    }
+
+    .primary-button:hover { background: var(--teal-dark); }
+
+    .footer-note {
+      margin: 0;
+      color: #87928f;
+      font-size: 10px;
+      text-align: center;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      clip-path: inset(50%);
+    }
+
+    @media (max-width: 980px) {
+      .workspace { grid-template-columns: minmax(265px, 310px) minmax(0, 1fr); gap: 15px; }
+      .checks-grid { gap: 11px; }
+      .check-card { padding: 14px; }
+      .example-pill { display: none; }
+    }
+
+    @media (max-width: 760px) {
+      main { padding-top: 22px; }
+      .page-intro { align-items: flex-start; }
+      .workspace { grid-template-columns: 1fr; }
+      .input-panel { order: 1; }
+      .results-column { order: 2; }
+      .input-panel .panel-body {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        align-items: start;
+        gap: 0 22px;
+      }
+      .form-section + .form-section { margin-top: 0; }
+      .form-section:nth-child(n + 3) {
+        margin-top: 20px;
+        padding-top: 18px;
+        border-top: 1px solid #edf1f0;
+      }
+      .mockup-note { grid-column: 1 / -1; }
+    }
+
+    @media (max-width: 540px) {
+      .topbar { min-height: 62px; padding: 0 16px; }
+      .brand-mark { width: 33px; height: 33px; }
+      .brand-name { font-size: 14px; }
+      .brand-subtitle { font-size: 10px; }
+      .preview-badge { padding: 6px 8px; font-size: 9px; }
+      main { padding: 20px 12px 30px; }
+      .page-intro { margin-bottom: 15px; }
+      h1 { font-size: 27px; }
+      .intro-copy { font-size: 12px; }
+      .workspace { gap: 13px; }
+      .input-panel .panel-body { display: block; padding: 16px; }
+      .form-section + .form-section {
+        margin-top: 18px;
+        padding-top: 17px;
+      }
+      .panel-heading { padding: 15px 16px; }
+      .beam-card { padding: 14px 13px 11px; }
+      .beam-card-top { align-items: flex-start; }
+      .diagrams-card { padding: 0 12px 12px; }
+      .diagram-heading { align-items: flex-start; flex-direction: column; gap: 8px; }
+      .checks-grid { grid-template-columns: 1fr; gap: 11px; }
+      .check-card { padding: 15px; }
+      .recommendation { align-items: flex-start; padding: 15px; }
+      .recommendation-main { align-items: flex-start; }
+      .recommendation-icon { width: 34px; height: 34px; }
+      .primary-button { padding: 8px 9px; }
+      .chart-xaxis { margin-left: 9%; font-size: 8px; }
+      .chart-maximum { font-size: 9px; }
+      .chart-maximum strong { font-size: 10px; }
+    }
+  </style>
 </head>
 <body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">
+        <svg width="21" height="21" viewBox="0 0 24 24" fill="none">
+          <path d="M4 7h16M6 7v10m12-10v10M4 17h4m8 0h4M8 11h8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div>
+        <p class="brand-name">Beam Designer</p>
+        <p class="brand-subtitle">Beam analysis workspace</p>
+      </div>
+    </div>
+    <div class="preview-badge">Static mockup · no calculations</div>
+  </header>
+
+  <main>
+    <section class="page-intro" aria-labelledby="page-title">
+      <div>
+        <p class="eyebrow">Beam check</p>
+        <h1 id="page-title">Design your beam</h1>
+        <p class="intro-copy">Set the support, section, and loads. Review the beam response and preliminary checks in one place.</p>
+      </div>
+      <div class="example-pill">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <path d="M3 8a5 5 0 1 0 1.45-3.54L3 5.9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M3 3.5v2.6h2.6M8 5.1V8l1.9 1.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Example loaded
+      </div>
+    </section>
+
+    <div class="workspace">
+      <aside class="panel input-panel" aria-labelledby="inputs-title">
+        <div class="panel-heading">
+          <div>
+            <h2 id="inputs-title">Beam inputs</h2>
+            <p>Example values · visual controls only</p>
+          </div>
+          <span class="static-chip">Preview</span>
+        </div>
+        <div class="panel-body">
+          <section class="form-section" aria-labelledby="setup-label">
+            <h3 class="section-label" id="setup-label">Beam setup</h3>
+            <div class="field-grid">
+              <div class="field">
+                <label for="support">Support type</label>
+                <select class="control" id="support">
+                  <option selected>Simply supported</option>
+                  <option>Cantilever</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="span">Span</label>
+                <div class="input-unit">
+                  <input class="control" id="span" type="number" value="20" min="0.1" max="100" step="0.1">
+                  <span>ft</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="field-grid one" style="margin-top: 12px">
+              <div class="field">
+                <span class="field-label">Material</span>
+                <div class="radio-row" role="group" aria-label="Material">
+                  <label class="radio-option selected"><input type="radio" name="material" checked> Steel W-shape</label>
+                  <label class="radio-option"><input type="radio" name="material"> Dimensional lumber</label>
+                </div>
+              </div>
+              <div class="field">
+                <label for="steel-section">W-shape section</label>
+                <select class="control" id="steel-section">
+                  <option selected>W12x26</option>
+                  <option>W12x22</option>
+                  <option>W14x30</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="lumber-preview" aria-label="Lumber selection fields shown for mockup coverage">
+              <div class="lumber-preview-head">
+                <span>Lumber catalog fields</span>
+                <span class="alt-tag">Alternate material</span>
+              </div>
+              <div class="field-grid">
+                <div class="field">
+                  <label for="lumber-size">Nominal size</label>
+                  <select class="control" id="lumber-size" disabled>
+                    <option selected>2x10</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="lumber-species">Species</label>
+                  <select class="control" id="lumber-species" disabled>
+                    <option selected>SPF</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="lumber-grade">Grade</label>
+                  <select class="control" id="lumber-grade" disabled>
+                    <option selected>No. 2</option>
+                  </select>
+                </div>
+              </div>
+              <p class="helper">Shown as an alternate catalog selection; controls are not wired in this mockup.</p>
+            </div>
+          </section>
+
+          <section class="form-section" aria-labelledby="loads-label">
+            <h3 class="section-label" id="loads-label">Applied loads <span style="font-weight: 500; letter-spacing: 0; text-transform: none">· 2 of 20 rows</span></h3>
+
+            <div class="load-row">
+              <div class="load-row-head">
+                <div class="load-row-name">
+                  <span class="load-icon" aria-hidden="true">
+                    <svg width="12" height="14" viewBox="0 0 12 14" fill="none"><path d="M6 1v10m0 0 3-3m-3 3-3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </span>
+                  Uniform load
+                </div>
+                <button class="text-button" type="button" aria-label="Remove uniform load row">Remove</button>
+              </div>
+              <div class="load-fields">
+                <div class="field">
+                  <label for="uniform-magnitude">Intensity</label>
+                  <div class="input-unit">
+                    <input class="control" id="uniform-magnitude" type="number" value="1.00" min="0" max="100" step="0.01">
+                    <span>kip/ft</span>
+                  </div>
+                </div>
+                <div class="field">
+                  <label for="uniform-start">Start</label>
+                  <div class="input-unit">
+                    <input class="control" id="uniform-start" type="number" value="0" min="0" max="20" step="0.1">
+                    <span>ft</span>
+                  </div>
+                </div>
+                <div class="field">
+                  <label for="uniform-end">End</label>
+                  <div class="input-unit">
+                    <input class="control" id="uniform-end" type="number" value="20" min="0" max="20" step="0.1">
+                    <span>ft</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="load-row">
+              <div class="load-row-head">
+                <div class="load-row-name">
+                  <span class="load-icon point" aria-hidden="true">
+                    <svg width="12" height="14" viewBox="0 0 12 14" fill="none"><path d="M6 1v10m0 0 3-3m-3 3-3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="6" cy="2" r="1.4" fill="currentColor"/></svg>
+                  </span>
+                  Point load <span style="color:#8a9693;font-size:9px;font-weight:500">· zero-load preview</span>
+                </div>
+                <button class="text-button" type="button" aria-label="Remove point load row">Remove</button>
+              </div>
+              <div class="load-fields">
+                <div class="field">
+                  <label for="point-magnitude">Magnitude</label>
+                  <div class="input-unit">
+                    <input class="control" id="point-magnitude" type="number" value="0.00" min="0" max="1000" step="0.1">
+                    <span>kip</span>
+                  </div>
+                </div>
+                <div class="field">
+                  <label for="point-position">Position</label>
+                  <div class="input-unit">
+                    <input class="control" id="point-position" type="number" value="10" min="0" max="20" step="0.1">
+                    <span>ft</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <p class="helper">Positive load values act downward. Point-load positions and uniform-load extents are measured from the left end.</p>
+            <button class="add-load" type="button">
+              <svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+              Add load row
+            </button>
+          </section>
+
+          <section class="form-section" aria-labelledby="weight-label">
+            <h3 class="section-label" id="weight-label">Additional effects</h3>
+            <label class="check-control" for="self-weight">
+              <input id="self-weight" type="checkbox" checked>
+              <span>
+                <strong>Include beam self-weight</strong>
+                <small>Applied over the full span · catalog weight</small>
+              </span>
+            </label>
+          </section>
+
+          <div class="mockup-note" role="note">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="6.25" stroke="currentColor" stroke-width="1.3"/><path d="M8 7.1v3.4M8 4.7h.01" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            <span>Static mockup only. Controls and results are visual placeholders; no analysis is being calculated.</span>
+          </div>
+        </div>
+      </aside>
+
+      <section class="results-column" aria-label="Beam outputs">
+        <article class="panel beam-card">
+          <div class="beam-card-top">
+            <div>
+              <h2>Beam &amp; loading</h2>
+              <p class="beam-card-subtitle">Simply supported · W12x26 · 20 ft span</p>
+            </div>
+            <span class="static-chip">Sample view</span>
+          </div>
+          <svg class="beam-svg" viewBox="0 0 780 184" role="img" aria-labelledby="beam-title beam-desc">
+            <title id="beam-title">Static beam and load illustration</title>
+            <desc id="beam-desc">A 20 foot simply supported W12x26 beam with a full-span uniform load, zero point load row, and placeholder reactions of 10 kips at each support.</desc>
+            <defs>
+              <marker id="arrow-down" markerWidth="7" markerHeight="7" refX="3.5" refY="6" orient="auto" markerUnits="strokeWidth">
+                <path d="M0 0 3.5 6 7 0" fill="#477b9a"/>
+              </marker>
+              <marker id="arrow-up" markerWidth="7" markerHeight="7" refX="3.5" refY="1" orient="auto" markerUnits="strokeWidth">
+                <path d="M0 7 3.5 1 7 7" fill="#157b72"/>
+              </marker>
+            </defs>
+            <line x1="83" y1="43" x2="697" y2="43" stroke="#88aebc" stroke-width="1.3"/>
+            <line x1="83" y1="43" x2="83" y2="49" stroke="#88aebc" stroke-width="1.3"/>
+            <line x1="697" y1="43" x2="697" y2="49" stroke="#88aebc" stroke-width="1.3"/>
+            <rect x="311" y="24" width="158" height="20" rx="8" fill="#fff"/>
+            <text x="390" y="38" text-anchor="middle" fill="#58716c" font-size="11" font-weight="650">1.00 kip/ft · full span</text>
+
+            <g stroke="#477b9a" stroke-width="1.6" marker-end="url(#arrow-down)">
+              <line x1="92" y1="51" x2="92" y2="79"/>
+              <line x1="154" y1="51" x2="154" y2="79"/>
+              <line x1="216" y1="51" x2="216" y2="79"/>
+              <line x1="278" y1="51" x2="278" y2="79"/>
+              <line x1="340" y1="51" x2="340" y2="79"/>
+              <line x1="402" y1="51" x2="402" y2="79"/>
+              <line x1="464" y1="51" x2="464" y2="79"/>
+              <line x1="526" y1="51" x2="526" y2="79"/>
+              <line x1="588" y1="51" x2="588" y2="79"/>
+              <line x1="650" y1="51" x2="650" y2="79"/>
+              <line x1="688" y1="51" x2="688" y2="79"/>
+            </g>
+
+            <line x1="83" y1="84" x2="697" y2="84" stroke="#263b37" stroke-width="6" stroke-linecap="round"/>
+            <line x1="83" y1="145" x2="83" y2="94" stroke="#157b72" stroke-width="2" marker-end="url(#arrow-up)"/>
+            <line x1="697" y1="145" x2="697" y2="94" stroke="#157b72" stroke-width="2" marker-end="url(#arrow-up)"/>
+            <text x="83" y="161" text-anchor="middle" fill="#157b72" font-size="11" font-weight="700">10.0 k</text>
+            <text x="697" y="161" text-anchor="middle" fill="#157b72" font-size="11" font-weight="700">10.0 k</text>
+
+            <path d="M72 91 83 105 94 91Z" fill="#dbe8e4" stroke="#76918a" stroke-width="1.2"/>
+            <path d="M686 91 697 105 708 91Z" fill="#dbe8e4" stroke="#76918a" stroke-width="1.2"/>
+            <line x1="72" y1="108" x2="94" y2="108" stroke="#a5b7b2" stroke-width="1.2"/>
+            <circle cx="691" cy="109" r="3" fill="#fff" stroke="#76918a" stroke-width="1.2"/>
+            <circle cx="703" cy="109" r="3" fill="#fff" stroke="#76918a" stroke-width="1.2"/>
+            <line x1="681" y1="113" x2="713" y2="113" stroke="#a5b7b2" stroke-width="1.2"/>
+
+            <line x1="83" y1="127" x2="697" y2="127" stroke="#d7e0dd" stroke-width="1"/>
+            <g stroke="#a4b1ae" stroke-width="1">
+              <line x1="83" y1="123" x2="83" y2="131"/>
+              <line x1="236.5" y1="123" x2="236.5" y2="131"/>
+              <line x1="390" y1="123" x2="390" y2="131"/>
+              <line x1="543.5" y1="123" x2="543.5" y2="131"/>
+              <line x1="697" y1="123" x2="697" y2="131"/>
+            </g>
+            <g fill="#83908d" font-size="9">
+              <text x="83" y="142" text-anchor="middle">0 ft</text>
+              <text x="236.5" y="142" text-anchor="middle">5 ft</text>
+              <text x="390" y="142" text-anchor="middle">10 ft</text>
+              <text x="543.5" y="142" text-anchor="middle">15 ft</text>
+              <text x="697" y="142" text-anchor="middle">20 ft</text>
+            </g>
+          </svg>
+          <div class="beam-caption">
+            <span class="legend-item"><span class="legend-mark"></span>Uniform load · downward</span>
+            <span class="legend-item"><span class="legend-mark reaction"></span>Reactions · placeholder</span>
+            <span class="legend-item"><span class="legend-mark point"></span>Point-load row is 0.00 kip</span>
+          </div>
+        </article>
+
+        <article class="panel diagrams-card" aria-labelledby="diagrams-title">
+          <div class="diagram-heading">
+            <div>
+              <h2 id="diagrams-title">Response diagrams</h2>
+              <p>Same span scale · static sample values, not calculated</p>
+            </div>
+            <div class="cursor-sample">
+              <svg width="12" height="14" viewBox="0 0 12 14" fill="none" aria-hidden="true"><path d="M6 1v12" stroke="#157b72" stroke-width="1.5" stroke-dasharray="2 2"/></svg>
+              Cursor preview <strong>x = 10 ft</strong>
+            </div>
+          </div>
+
+          <section class="chart" aria-labelledby="shear-title">
+            <div class="chart-topline">
+              <div class="chart-title" id="shear-title"><span class="swatch"></span>Shear force</div>
+              <div class="chart-maximum">Max absolute <strong>10.0 k</strong> <span>at 0 ft / 20 ft</span></div>
+            </div>
+            <svg class="chart-svg" viewBox="0 0 780 142" role="img" aria-label="Placeholder shear diagram: line descends from positive 10 kips at the left support to negative 10 kips at the right support.">
+              <rect x="64" y="12" width="666" height="105" rx="6" fill="#fbfcfc"/>
+              <line x1="64" y1="64" x2="730" y2="64" stroke="#cfd9d6" stroke-width="1"/>
+              <line x1="64" y1="12" x2="64" y2="117" stroke="#e5ebe9" stroke-width="1"/>
+              <line x1="230.5" y1="12" x2="230.5" y2="117" stroke="#edf1f0" stroke-width="1"/>
+              <line x1="397" y1="12" x2="397" y2="117" stroke="#edf1f0" stroke-width="1"/>
+              <line x1="563.5" y1="12" x2="563.5" y2="117" stroke="#edf1f0" stroke-width="1"/>
+              <line x1="730" y1="12" x2="730" y2="117" stroke="#e5ebe9" stroke-width="1"/>
+              <path d="M64 64 64 22 397 64Z" fill="#e1edf3"/>
+              <path d="M397 64 730 106 730 64Z" fill="#f3e8e2"/>
+              <path d="M64 22 730 106" fill="none" stroke="#477b9a" stroke-width="2.4" stroke-linecap="round"/>
+              <line x1="397" y1="12" x2="397" y2="117" stroke="#157b72" stroke-width="1.4" stroke-dasharray="4 4"/>
+              <circle cx="397" cy="64" r="4" fill="#fff" stroke="#157b72" stroke-width="2"/>
+              <circle cx="64" cy="22" r="3.5" fill="#477b9a"/>
+              <circle cx="730" cy="106" r="3.5" fill="#477b9a"/>
+              <text x="71" y="18" fill="#426d87" font-size="10" font-weight="700">+10.0 k</text>
+              <text x="723" y="121" text-anchor="end" fill="#426d87" font-size="10" font-weight="700">−10.0 k</text>
+              <rect x="374" y="39" width="46" height="17" rx="5" fill="#fff" stroke="#dce8e4"/>
+              <text x="397" y="51" text-anchor="middle" fill="#437068" font-size="9" font-weight="700">0.0 k</text>
+            </svg>
+            <div class="chart-xaxis" aria-hidden="true"><span>0 ft</span><span>5 ft</span><span>10 ft</span><span>15 ft</span><span>20 ft</span></div>
+          </section>
+
+          <section class="chart" aria-labelledby="moment-title">
+            <div class="chart-topline">
+              <div class="chart-title" id="moment-title"><span class="swatch moment"></span>Bending moment</div>
+              <div class="chart-maximum">Max <strong>50.0 kip-ft</strong> <span>at 10 ft</span></div>
+            </div>
+            <svg class="chart-svg" viewBox="0 0 780 142" role="img" aria-label="Placeholder bending moment diagram: a filled parabolic curve with maximum 50 kip-feet at midspan.">
+              <rect x="64" y="12" width="666" height="105" rx="6" fill="#fbfcfc"/>
+              <line x1="64" y1="116" x2="730" y2="116" stroke="#cfd9d6" stroke-width="1"/>
+              <line x1="64" y1="12" x2="64" y2="117" stroke="#e5ebe9" stroke-width="1"/>
+              <line x1="230.5" y1="12" x2="230.5" y2="117" stroke="#edf1f0" stroke-width="1"/>
+              <line x1="397" y1="12" x2="397" y2="117" stroke="#edf1f0" stroke-width="1"/>
+              <line x1="563.5" y1="12" x2="563.5" y2="117" stroke="#edf1f0" stroke-width="1"/>
+              <line x1="730" y1="12" x2="730" y2="117" stroke="#e5ebe9" stroke-width="1"/>
+              <path d="M64 116 C180 78 281 29 397 24 C513 29 614 78 730 116 L730 116Z" fill="#dcefe9"/>
+              <path d="M64 116 C180 78 281 29 397 24 C513 29 614 78 730 116" fill="none" stroke="#157b72" stroke-width="2.4" stroke-linecap="round"/>
+              <line x1="397" y1="12" x2="397" y2="117" stroke="#157b72" stroke-width="1.4" stroke-dasharray="4 4"/>
+              <circle cx="397" cy="24" r="4" fill="#fff" stroke="#157b72" stroke-width="2"/>
+              <rect x="359" y="1" width="76" height="17" rx="5" fill="#fff" stroke="#dce8e4"/>
+              <text x="397" y="13" text-anchor="middle" fill="#286d62" font-size="9" font-weight="700">50.0 kip-ft</text>
+            </svg>
+            <div class="chart-xaxis" aria-hidden="true"><span>0 ft</span><span>5 ft</span><span>10 ft</span><span>15 ft</span><span>20 ft</span></div>
+          </section>
+
+          <section class="chart" aria-labelledby="deflection-title">
+            <div class="chart-topline">
+              <div class="chart-title" id="deflection-title"><span class="swatch deflection"></span>Deflected shape</div>
+              <div class="chart-maximum">Max <strong>0.609 in</strong> <span>at 10 ft</span></div>
+            </div>
+            <svg class="chart-svg" viewBox="0 0 780 142" role="img" aria-label="Placeholder deflection diagram: downward curve with maximum deflection 0.609 inches at midspan.">
+              <rect x="64" y="12" width="666" height="105" rx="6" fill="#fbfcfc"/>
+              <line x1="64" y1="25" x2="730" y2="25" stroke="#cfd9d6" stroke-width="1"/>
+              <line x1="64" y1="12" x2="64" y2="117" stroke="#e5ebe9" stroke-width="1"/>
+              <line x1="230.5" y1="12" x2="230.5" y2="117" stroke="#edf1f0" stroke-width="1"/>
+              <line x1="397" y1="12" x2="397" y2="117" stroke="#edf1f0" stroke-width="1"/>
+              <line x1="563.5" y1="12" x2="563.5" y2="117" stroke="#edf1f0" stroke-width="1"/>
+              <line x1="730" y1="12" x2="730" y2="117" stroke="#e5ebe9" stroke-width="1"/>
+              <path d="M64 25 C175 28 292 100 397 108 C502 100 619 28 730 25 L730 25Z" fill="#eeeaf5"/>
+              <path d="M64 25 C175 28 292 100 397 108 C502 100 619 28 730 25" fill="none" stroke="#8c78b4" stroke-width="2.4" stroke-linecap="round"/>
+              <line x1="397" y1="12" x2="397" y2="117" stroke="#157b72" stroke-width="1.4" stroke-dasharray="4 4"/>
+              <circle cx="397" cy="108" r="4" fill="#fff" stroke="#8c78b4" stroke-width="2"/>
+              <rect x="357" y="112" width="80" height="17" rx="5" fill="#fff" stroke="#e5e0ee"/>
+              <text x="397" y="124" text-anchor="middle" fill="#71628f" font-size="9" font-weight="700">−0.609 in</text>
+            </svg>
+            <div class="chart-xaxis" aria-hidden="true"><span>0 ft</span><span>5 ft</span><span>10 ft</span><span>15 ft</span><span>20 ft</span></div>
+          </section>
+
+          <div class="hover-readout" aria-label="Static crosshair preview values">
+            <span>Crosshair preview at <strong>x = 10 ft</strong></span>
+            <span>V <strong>0.0 k</strong></span>
+            <span>M <strong>50.0 kip-ft</strong></span>
+            <span>y <strong>−0.609 in</strong></span>
+          </div>
+        </article>
+
+        <section class="checks-grid" aria-label="Placeholder design checks">
+          <article class="check-card" title="Preview only: bending stress is compared with allowable bending stress.">
+            <div class="check-head">
+              <div class="check-title-wrap">
+                <span class="check-icon" aria-hidden="true">
+                  <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 12.5 6 9l2.2 1.8L13 5.5M10 5.5h3v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </span>
+                <div>
+                  <h2 class="check-title">Bending</h2>
+                  <p class="check-subtitle">Stress vs. allowable</p>
+                </div>
+              </div>
+              <span class="pass-badge">PASS</span>
+            </div>
+            <div class="check-values">
+              <div class="actual-value">17.96 <small>ksi</small></div>
+              <div class="allowable-value">Allowable<strong>24.00 ksi</strong></div>
+            </div>
+            <div class="ratio-track" role="progressbar" aria-label="Bending utilization placeholder" aria-valuemin="0" aria-valuemax="100" aria-valuenow="75">
+              <div class="ratio-fill bending"></div>
+            </div>
+            <div class="ratio-key"><span>0%</span><span>70%</span><span>100%</span></div>
+            <div class="ratio-value">Utilization <strong>74.8%</strong></div>
+          </article>
+
+          <article class="check-card" title="Preview only: maximum deflection is compared with the L/360 placeholder limit.">
+            <div class="check-head">
+              <div class="check-title-wrap">
+                <span class="check-icon deflection" aria-hidden="true">
+                  <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M2 4.5c2.4 0 2.4 7 6 7s3.6-7 6-7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M2 12.8h12" stroke="currentColor" stroke-width="1.2" stroke-dasharray="2 2"/></svg>
+                </span>
+                <div>
+                  <h2 class="check-title">Deflection</h2>
+                  <p class="check-subtitle">Maximum vs. span limit</p>
+                </div>
+              </div>
+              <span class="pass-badge">PASS</span>
+            </div>
+            <div class="check-values">
+              <div class="actual-value">0.609 <small>in</small></div>
+              <div class="allowable-value">Allowable · L/360<strong>0.667 in</strong></div>
+            </div>
+            <div class="ratio-track" role="progressbar" aria-label="Deflection utilization placeholder" aria-valuemin="0" aria-valuemax="100" aria-valuenow="91">
+              <div class="ratio-fill deflection"></div>
+            </div>
+            <div class="ratio-key"><span>0%</span><span>70%</span><span>100%</span></div>
+            <div class="ratio-value">Utilization <strong>91.3%</strong></div>
+          </article>
+        </section>
+
+        <section class="recommendation" aria-label="Placeholder section recommendation">
+          <div class="recommendation-main">
+            <span class="recommendation-icon" aria-hidden="true">
+              <svg width="19" height="19" viewBox="0 0 20 20" fill="none"><path d="M10 2.3 12.1 7l5.1.5-3.8 3.4 1.1 5-4.5-2.6-4.5 2.6 1.1-5L2.8 7.5 7.9 7 10 2.3Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>
+            </span>
+            <div>
+              <h2>Lightest passing section <span class="alt-tag">· placeholder</span></h2>
+              <p><strong>W12x26</strong> · 26 lb/ft · sample recommendation only</p>
+            </div>
+          </div>
+          <button class="primary-button" type="button">
+            Use recommendation
+            <svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2.5 7h9m0 0L7.8 3.3M11.5 7l-3.7 3.7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </section>
+
+        <p class="footer-note">Stage 1 mockup · values are for visual review only and do not represent a beam analysis.</p>
+      </section>
+    </div>
+  </main>
 </body>
 </html>
